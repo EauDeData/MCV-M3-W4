@@ -12,6 +12,7 @@ from model import build_xception_model, get_intermediate_layer_model
 from dataset import load_dataset
 
 def fit_model(dataset_dir, optimizer_type, learning_rate, epochs, steps_per_epoch, validation_steps, momentum=None):
+    #TODO: pass arguments to the function
     model_name = 'xception'
 
     optimizer = get_optimizer(optimizer_type, learning_rate, momentum)
@@ -25,8 +26,8 @@ def fit_model(dataset_dir, optimizer_type, learning_rate, epochs, steps_per_epoc
 
     train_dir = dataset_dir + '/train'
     test_dir = dataset_dir + '/test'
-
-    train_datagen = load_dataset(train_dir) # todo: add preprocessing function
+    
+    train_datagen = load_dataset(train_dir) # TODO: add preprocessing function and other parameters
     validation_datagen = load_dataset(test_dir) 
 
     wandb_config: Dict[str, Any] = {"model": {}}
