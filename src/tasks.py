@@ -4,18 +4,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 import wandb
 from wandb.keras import WandbMetricsLogger
-from typing import Dict, Any
+from typing import Dict, Any, List
 from keras.models import Model
 
 from utils import get_optimizer
 from model import build_xception_model, get_intermediate_layer_model
 from dataset import load_dataset
 
-def fit_model(model, train_set, val_set, optimizer_type, learning_rate, epochs, momentum=None):
-    #TODO: pass arguments to the function
 
-    optimizer = get_optimizer(optimizer_type, learning_rate, momentum)
-    model_name = 'xception'
+def eval_model(model, test_generator) -> List[float]:
+    # Evaluate the model on the test set
+    logging.info('Evaluating the model on the test set...\n')
+    scores = model.evaluate(test_generator)
+    logging.info('Done!\n')
+
+    # Print the accuracy and loss of the model on the test set
+    logging.info('Test loss: {}'.format(scores[0]))
+    logging.info('Test accuracy: {}\n'.format(scores[1]))
+
+    return scores
+
+
+def fit_model(model, train_set, val_set, config: Dict[str, Any]) -> List[float]:
+    optimizer = get_optimizer(config["optimizer_type"], config["learning_rate"], config["momentum"])
     
     model.compile(
         loss='categorical_crossentropy',
@@ -23,22 +34,11 @@ def fit_model(model, train_set, val_set, optimizer_type, learning_rate, epochs, 
         metrics=['accuracy']
     )
 
-    wandb_config: Dict[str, Any] = {"model": {}}
-    wandb_config['optimizer'] = {
-        'type': optimizer_type,
-        'learning_rate': learning_rate,
-    }
-
-    if momentum is not None:
-        wandb_config['optimizer']['momentum'] = momentum
-
-    wandb_config['epochs'] = epochs
-    #wandb_config['dataset_path'] = dataset_dir
-    wandb.init(config=wandb_config, project='m3_week4', name=model_name)
+    wandb.init(config=config, project='m3_week4', name=config["experiment_name"])
     
     model.fit(
         train_set,
-        epochs=epochs,
+        epochs=config["epochs"],
         validation_data=val_set,
         callbacks=[
             WandbMetricsLogger(),
@@ -55,7 +55,7 @@ def fit_model(model, train_set, val_set, optimizer_type, learning_rate, epochs, 
     if not os.path.exists(save_plot_dir):
         os.makedirs(save_plot_dir)
 
-    save_weights_path = save_weights_dir + model_name + '.h5'
+    save_weights_path = save_weights_dir + config["model_name"] + '.h5'
 
     logging.info('Done!\n')
     logging.info('Saving the model into ' + save_weights_path + ' \n')
@@ -64,9 +64,8 @@ def fit_model(model, train_set, val_set, optimizer_type, learning_rate, epochs, 
 
     logging.info('Done!\n')
 
-
-def eval_model(model, test_generator):
-	pass
+    # Return accuracy and loss of the model on the test set
+    return eval_model(model, val_set)
 
 
 def visualize_layer(model, sample, layer_index = -2, aggr = 'Max'):

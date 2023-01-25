@@ -1,9 +1,15 @@
+import os
 import argparse
 import keras
+import datetime
+import numpy as np
+from typing import Dict, Any, List
 
 import dataset as dtst
 import tasks
+import utils
 from model import build_xception_model
+
 
 def __parse_args() -> argparse.Namespace:
     """
@@ -13,7 +19,7 @@ def __parse_args() -> argparse.Namespace:
         argparse.Namespace: Arguments.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--task', type=str, default='default_train',
+    parser.add_argument('--task', type=str, default='cross_validation',
                         help='Task to perform: create_patches, train...')
     # Model args
     parser.add_argument('--model_config_file', type=str, default='model_configs/arquitecture1/encoder_3_layers_64_units.json',
@@ -22,7 +28,7 @@ def __parse_args() -> argparse.Namespace:
                         help='Path to the model weights file.')
     parser.add_argument('--intermediate_layer', type=str, default=None,
                         help='Name of the intermediate layer to extract features from.')
-    parser.add_argument('--bottleneck_index', type = int, default = 4)
+    parser.add_argument('--bottleneck_index', type=int, default=4)
     # Dataset args
     parser.add_argument('--dataset_dir', type=str, default='data/MIT_split',
                         help='Path to the dataset directory.')
@@ -32,6 +38,8 @@ def __parse_args() -> argparse.Namespace:
                         help='Patch size.')
     parser.add_argument('--color_mode', type=str, default=['rgb'], nargs='*', choices=['rgb', 'grayscale'],
                         help='Color mode.')
+    parser.add_argument('--train_augmentations_file', type=str, default="configs/augmentations/train_augmentations.json",
+                        help='Path to the train augmentations file.')
     # Training args
     parser.add_argument('--batch_size', type=int, default=128,
                         help='Batch size.')
@@ -54,26 +62,79 @@ def __parse_args() -> argparse.Namespace:
     return args
 
 
+def default_train(args, dataset_dir, experiment_name: str = None) -> List[float]:
+    ### DATA ###
+    train_dir = dataset_dir + '/train'
+    test_dir = dataset_dir + '/test'
+
+    prep = keras.applications.xception.preprocess_input
+    train_augmentations = utils.load_config(args.train_augmentations_file)
+
+    train_datagen = dtst.load_dataset(
+        train_dir, preprocess_function=prep, augmentations=train_augmentations)
+    validation_datagen = dtst.load_dataset(
+        test_dir, preprocess_function=prep)
+
+    ### MODEL ###
+    model = build_xception_model()
+
+    ### TRAIN LOOP ###
+    if experiment_name is None:
+        experiment_name = f'xception_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}'
+
+    config: Dict[str, Any] = {
+        "experiment_name": experiment_name,
+        "model": {
+            "name": "Xception",
+        },
+        "optimizer": {
+            'type': args.optimizer,
+            'learning_rate': args.learning_rate,
+        },
+        "epochs": args.epochs,
+        "dataset_path": args.dataset_dir,
+    }
+
+    if args.momentum is not None:
+        config['optimizer']['momentum'] = args.momentum
+
+    return tasks.fit_model(model, train_datagen, validation_datagen, config)
+
+
 def main(args: argparse.Namespace):
-    pass
+    if args.task == 'default_train':
+        default_train(args, args.dataset_dir)
+
+    elif args.task == 'cross_validation':
+        # List the directories in the dataset directory
+        dataset_dir = args.dataset_dir
+        dataset_dirs = [os.path.join(dataset_dir, d)
+                        for d in os.listdir(dataset_dir) if os.path.isdir(os.path.join(dataset_dir, d))]
+        dataset_dirs.sort()
+
+        timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
+        # Train the model for each fold and save the metrics, then compute the mean and std
+        loss = []
+        accuracy = []
+        
+        for i, dataset_dir in enumerate(dataset_dirs):
+            print(f'Cross validation {i + 1}/{len(dataset_dirs)}')
+            experiment_name = f'xception_fold{i+1}_{timestamp}'
+            metrics = default_train(args, dataset_dir, experiment_name)
+            loss.append(metrics[0])
+            accuracy.append(metrics[1])
+
+        loss = np.array(loss)
+        accuracy = np.array(accuracy)
+
+        print(f'Loss: {loss.mean()} +- {loss.std()}')
+        print(f'Accuracy: {accuracy.mean()} +- {accuracy.std()}')
 
 
 if __name__ == '__main__':
     args = __parse_args()
-    if args.task == 'default_train':
+    main(args)
+    
 
-
-        ### DATA ###
-        train_dir = args.dataset_dir + '/train'
-        test_dir = args.dataset_dir + '/test'
-        prep = keras.applications.xception.preprocess_input
-
-        train_datagen = dtst.load_dataset(train_dir, preprocess_function = prep)  
-        validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep) 
-
-        ### MODEL ###
-        model = build_xception_model()
-
-        ### TRAIN LOOP ###
-        tasks.fit_model(model, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)
         

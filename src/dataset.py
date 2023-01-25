@@ -11,8 +11,6 @@ def load_dataset(data_dir, target_size: int = 64, batch_size: int = 16, preproce
 
     data_augmentation = ImageDataGenerator(
         preprocessing_function=preprocess_function,
-        horizontal_flip=True,
-        fill_mode='nearest',
         **augmentations
     )
 
