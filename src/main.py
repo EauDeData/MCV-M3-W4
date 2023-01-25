@@ -1,5 +1,9 @@
 import argparse
+import keras
 
+import dataset as dtst
+import tasks
+from model import build_xception_model
 
 def __parse_args() -> argparse.Namespace:
     """
@@ -20,7 +24,7 @@ def __parse_args() -> argparse.Namespace:
                         help='Name of the intermediate layer to extract features from.')
     parser.add_argument('--bottleneck_index', type = int, default = 4)
     # Dataset args
-    parser.add_argument('--dataset_dir', type=str, default='MIT_split',
+    parser.add_argument('--dataset_dir', type=str, default='data/MIT_split',
                         help='Path to the dataset directory.')
     parser.add_argument('--patches_dataset_dir', type=str, default=None,
                         help='Path to the patches dataset directory.')
@@ -38,9 +42,9 @@ def __parse_args() -> argparse.Namespace:
     parser.add_argument('--validation_steps', type=int, default=-1,
                         help='Number of validation steps. If -1, it will be set to the number of samples in the validation dataset divided by the batch size.')
     # Optimizer args
-    parser.add_argument('--optimizer', type=str, default='sgd',
+    parser.add_argument('--optimizer', type=str, default='adam',
                         help='Optimizer.')
-    parser.add_argument('--learning_rate', type=float, default=0.001,
+    parser.add_argument('--learning_rate', type=float, default=0.01,
                         help='Learning rate.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='Momentum.')
@@ -56,4 +60,20 @@ def main(args: argparse.Namespace):
 
 if __name__ == '__main__':
     args = __parse_args()
-    main(args)
+    if args.task == 'default_train':
+
+
+        ### DATA ###
+        train_dir = args.dataset_dir + '/train'
+        test_dir = args.dataset_dir + '/test'
+        prep = keras.applications.xception.preprocess_input
+
+        train_datagen = dtst.load_dataset(train_dir, preprocess_function = prep)  
+        validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep) 
+
+        ### MODEL ###
+        model = build_xception_model()
+
+        ### TRAIN LOOP ###
+        tasks.fit_model(model, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)
+        

@@ -4,9 +4,9 @@ from keras.optimizers import SGD, Adam
 
 def get_optimizer(optimizer: str, learning_rate: float, momentum: Optional[float]):
     if optimizer == 'sgd':
-        optimizer = SGD(lr=learning_rate, momentum=momentum)
+        optimizer = SGD(learning_rate=learning_rate, momentum=momentum)
     elif optimizer == 'adam':
-        optimizer = Adam(lr=learning_rate)
+        optimizer = Adam(learning_rate=learning_rate)
     else:
         raise Exception('Optimizer not supported: {}'.format(optimizer))
 

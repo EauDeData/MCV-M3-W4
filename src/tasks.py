@@ -11,24 +11,17 @@ from utils import get_optimizer
 from model import build_xception_model, get_intermediate_layer_model
 from dataset import load_dataset
 
-def fit_model(dataset_dir, optimizer_type, learning_rate, epochs, steps_per_epoch, validation_steps, momentum=None):
+def fit_model(model, train_set, val_set, optimizer_type, learning_rate, epochs, momentum=None):
     #TODO: pass arguments to the function
-    model_name = 'xception'
 
     optimizer = get_optimizer(optimizer_type, learning_rate, momentum)
-
-    model = build_xception_model()
+    model_name = 'xception'
+    
     model.compile(
         loss='categorical_crossentropy',
         optimizer=optimizer,
         metrics=['accuracy']
     )
-
-    train_dir = dataset_dir + '/train'
-    test_dir = dataset_dir + '/test'
-    
-    train_datagen = load_dataset(train_dir) # TODO: add preprocessing function and other parameters
-    validation_datagen = load_dataset(test_dir) 
 
     wandb_config: Dict[str, Any] = {"model": {}}
     wandb_config['optimizer'] = {
@@ -40,17 +33,13 @@ def fit_model(dataset_dir, optimizer_type, learning_rate, epochs, steps_per_epoc
         wandb_config['optimizer']['momentum'] = momentum
 
     wandb_config['epochs'] = epochs
-    wandb_config['steps_per_epoch'] = steps_per_epoch
-    wandb_config['validation_steps'] = validation_steps
-    wandb_config['dataset_path'] = dataset_dir
+    #wandb_config['dataset_path'] = dataset_dir
     wandb.init(config=wandb_config, project='m3_week4', name=model_name)
     
     model.fit(
-        train_datagen,
-        steps_per_epoch=steps_per_epoch,
+        train_set,
         epochs=epochs,
-        validation_data=validation_datagen,
-        validation_steps=validation_steps,
+        validation_data=val_set,
         callbacks=[
             WandbMetricsLogger(),
             ]
