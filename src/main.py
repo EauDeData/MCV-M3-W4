@@ -44,7 +44,7 @@ def __parse_args() -> argparse.Namespace:
     # Optimizer args
     parser.add_argument('--optimizer', type=str, default='adam',
                         help='Optimizer.')
-    parser.add_argument('--learning_rate', type=float, default=0.01,
+    parser.add_argument('--learning_rate', type=float, default=0.001,
                         help='Learning rate.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='Momentum.')
