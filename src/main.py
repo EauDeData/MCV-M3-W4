@@ -19,8 +19,8 @@ def __parse_args() -> argparse.Namespace:
         argparse.Namespace: Arguments.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--task', type=str, default='cross_validation',
-                        help='Task to perform: create_patches, train...')
+    parser.add_argument('--task', type=str, default='optuna_search',
+                        help='Task to perform: [default_train, evaluate, cross_validation, optuna_search]')
     # Model args
     # parser.add_argument('--model_config_file', type=str, default='model_configs/arquitecture1/encoder_3_layers_64_units.json',
     #                     help='Path to the model configuration file.')
@@ -30,7 +30,7 @@ def __parse_args() -> argparse.Namespace:
     #                     help='Name of the intermediate layer to extract features from.')
     # parser.add_argument('--bottleneck_index', type=int, default=4)
     # Dataset args
-    parser.add_argument('--dataset_dir', type=str, default='data/folds',
+    parser.add_argument('--dataset_dir', type=str, default='data/MIT_split',
                         help='Path to the dataset directory.')
     parser.add_argument('--patches_dataset_dir', type=str, default=None,
                         help='Path to the patches dataset directory.')
@@ -64,57 +64,25 @@ def __parse_args() -> argparse.Namespace:
     return args
 
 
-def default_train(args, dataset_dir, experiment_name: str = None) -> List[float]:
-    ### DATA ###
-    train_dir = dataset_dir + '/train'
-    test_dir = dataset_dir + '/test'
+def main(args: argparse.Namespace):
+    if args.task == 'default_train':
+        tasks.default_train(args, args.dataset_dir, log2wandb=args.log2wandb)
 
-    prep = keras.applications.xception.preprocess_input
-    train_augmentations = utils.load_config(args.train_augmentations_file)
+    elif args.task == 'evaluate':
+        model = build_xception_model(args.model_weights_file)
 
-    train_datagen = dtst.load_dataset(
-        train_dir, 
-        target_size=args.image_size[0],
-        batch_size=args.batch_size,
-        preprocess_function=prep, 
-        augmentations=train_augmentations
-        )
-    validation_datagen = dtst.load_dataset(
-        test_dir,
+        prep = keras.applications.xception.preprocess_input
+        validation_datagen = dtst.load_dataset(
+        args.dataset_dir + "/test",
         target_size=args.image_size[0],
         batch_size=args.batch_size,
         preprocess_function=prep
         )
 
-    ### MODEL ###
-    model = build_xception_model()
+        tasks.eval_model(model, validation_datagen)
 
-    ### TRAIN LOOP ###
-    if experiment_name is None:
-        experiment_name = f'xception_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}'
-
-    config: Dict[str, Any] = {
-        "experiment_name": experiment_name,
-        "model": {
-            "name": "Xception",
-        },
-        "optimizer": {
-            'type': args.optimizer,
-            'learning_rate': args.learning_rate,
-        },
-        "epochs": args.epochs,
-        "dataset_path": args.dataset_dir,
-    }
-
-    if args.momentum is not None:
-        config['optimizer']['momentum'] = args.momentum
-
-    return tasks.fit_model(model, train_datagen, validation_datagen, config, args.log2wandb)
-
-
-def main(args: argparse.Namespace):
-    if args.task == 'default_train':
-        default_train(args, args.dataset_dir)
+    elif args.task == 'optuna_search':
+        tasks.optuna_search(args, args.dataset_dir)
 
     elif args.task == 'cross_validation':
         # List the directories in the dataset directory
@@ -132,7 +100,7 @@ def main(args: argparse.Namespace):
         for i, dataset_dir in enumerate(dataset_dirs):
             print(f'Cross validation {i + 1}/{len(dataset_dirs)}')
             experiment_name = f'xception_fold{i+1}_{timestamp}'
-            metrics = default_train(args, dataset_dir, experiment_name)
+            metrics = tasks.default_train(args, dataset_dir, experiment_name, log2wandb=args.log2wandb, save_weights=False)
             loss.append(metrics[0])
             accuracy.append(metrics[1])
 

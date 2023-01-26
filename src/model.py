@@ -6,7 +6,7 @@ from keras.layers import Dense, GlobalAveragePooling2D
 from keras.models import Model
 
 
-def build_xception_model(freeze_layers: bool = True, cut_layer = None):
+def build_xception_model(weights = None, freeze_layers: bool = True, cut_layer = None):
     base_model = Xception(weights='imagenet', include_top=False)
 
     x = base_model.output
@@ -20,6 +20,9 @@ def build_xception_model(freeze_layers: bool = True, cut_layer = None):
     if freeze_layers:
         for layer in base_model.layers:
             layer.trainable = False
+
+    if weights is not None:
+        model.load_weights(weights)
     
     os.makedirs("out", exist_ok=True)
     keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
