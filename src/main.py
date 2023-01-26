@@ -22,33 +22,35 @@ def __parse_args() -> argparse.Namespace:
     parser.add_argument('--task', type=str, default='cross_validation',
                         help='Task to perform: create_patches, train...')
     # Model args
-    parser.add_argument('--model_config_file', type=str, default='model_configs/arquitecture1/encoder_3_layers_64_units.json',
-                        help='Path to the model configuration file.')
+    # parser.add_argument('--model_config_file', type=str, default='model_configs/arquitecture1/encoder_3_layers_64_units.json',
+    #                     help='Path to the model configuration file.')
     parser.add_argument('--model_weights_file', type=str, default=None,  # 'week3/model_weights/default.h5',
                         help='Path to the model weights file.')
-    parser.add_argument('--intermediate_layer', type=str, default=None,
-                        help='Name of the intermediate layer to extract features from.')
-    parser.add_argument('--bottleneck_index', type=int, default=4)
+    # parser.add_argument('--intermediate_layer', type=str, default=None,
+    #                     help='Name of the intermediate layer to extract features from.')
+    # parser.add_argument('--bottleneck_index', type=int, default=4)
     # Dataset args
-    parser.add_argument('--dataset_dir', type=str, default='data/MIT_split',
+    parser.add_argument('--dataset_dir', type=str, default='data/folds',
                         help='Path to the dataset directory.')
     parser.add_argument('--patches_dataset_dir', type=str, default=None,
                         help='Path to the patches dataset directory.')
-    parser.add_argument('--image_size', type=int, default=[128], nargs='*',
+    parser.add_argument('--image_size', type=int, default=[224], nargs='*',
                         help='Patch size.')
-    parser.add_argument('--color_mode', type=str, default=['rgb'], nargs='*', choices=['rgb', 'grayscale'],
-                        help='Color mode.')
+    # parser.add_argument('--color_mode', type=str, default=['rgb'], nargs='*', choices=['rgb', 'grayscale'],
+    #                     help='Color mode.')
     parser.add_argument('--train_augmentations_file', type=str, default="configs/augmentations/train_augmentations.json",
                         help='Path to the train augmentations file.')
     # Training args
-    parser.add_argument('--batch_size', type=int, default=128,
+    parser.add_argument('--batch_size', type=int, default=32,
                         help='Batch size.')
-    parser.add_argument('--epochs', type=int, default=50,
+    parser.add_argument('--epochs', type=int, default=1,
                         help='Number of epochs.')
-    parser.add_argument('--steps_per_epoch', type=int, default=-1,
-                        help='Number of steps per epoch. If -1, it will be set to the number of samples in the dataset divided by the batch size.')
-    parser.add_argument('--validation_steps', type=int, default=-1,
-                        help='Number of validation steps. If -1, it will be set to the number of samples in the validation dataset divided by the batch size.')
+    # parser.add_argument('--steps_per_epoch', type=int, default=-1,
+    #                     help='Number of steps per epoch. If -1, it will be set to the number of samples in the dataset divided by the batch size.')
+    # parser.add_argument('--validation_steps', type=int, default=-1,
+    #                     help='Number of validation steps. If -1, it will be set to the number of samples in the validation dataset divided by the batch size.')
+    parser.add_argument('--log2wandb', type=bool, default=False,
+                        help='Log to wandb.')
     # Optimizer args
     parser.add_argument('--optimizer', type=str, default='adam',
                         help='Optimizer.')
@@ -71,9 +73,18 @@ def default_train(args, dataset_dir, experiment_name: str = None) -> List[float]
     train_augmentations = utils.load_config(args.train_augmentations_file)
 
     train_datagen = dtst.load_dataset(
-        train_dir, preprocess_function=prep, augmentations=train_augmentations)
+        train_dir, 
+        target_size=args.image_size[0],
+        batch_size=args.batch_size,
+        preprocess_function=prep, 
+        augmentations=train_augmentations
+        )
     validation_datagen = dtst.load_dataset(
-        test_dir, preprocess_function=prep)
+        test_dir,
+        target_size=args.image_size[0],
+        batch_size=args.batch_size,
+        preprocess_function=prep
+        )
 
     ### MODEL ###
     model = build_xception_model()
@@ -98,7 +109,7 @@ def default_train(args, dataset_dir, experiment_name: str = None) -> List[float]
     if args.momentum is not None:
         config['optimizer']['momentum'] = args.momentum
 
-    return tasks.fit_model(model, train_datagen, validation_datagen, config)
+    return tasks.fit_model(model, train_datagen, validation_datagen, config, args.log2wandb)
 
 
 def main(args: argparse.Namespace):

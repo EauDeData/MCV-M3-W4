@@ -25,37 +25,41 @@ def eval_model(model, test_generator) -> List[float]:
     return scores
 
 
-def fit_model(model, train_set, val_set, config: Dict[str, Any]) -> List[float]:
-    optimizer = get_optimizer(config["optimizer_type"], config["learning_rate"], config["momentum"])
-    
+def fit_model(model, train_set, val_set, config: Dict[str, Any], log2wandb: bool = True) -> List[float]:
+    optimizer_config = config["optimizer"]
+    optimizer = get_optimizer(
+        optimizer_config["type"],
+        optimizer_config["learning_rate"],
+        optimizer_config["momentum"]
+    )
+
     model.compile(
         loss='categorical_crossentropy',
         optimizer=optimizer,
         metrics=['accuracy']
     )
 
-    wandb.init(config=config, project='m3_week4', name=config["experiment_name"])
-    
+    if log2wandb:
+        wandb.init(config=config, project='m3_week4',
+                name=config["experiment_name"])
+        callbacks = [WandbMetricsLogger()]
+    else:
+        callbacks = []
+
     model.fit(
         train_set,
         epochs=config["epochs"],
         validation_data=val_set,
-        callbacks=[
-            WandbMetricsLogger(),
-            ]
+        callbacks=callbacks
     )
-    wandb.finish()
 
-    save_weights_dir = './model_weights/'
-    save_plot_dir = './model_plots/'
+    if log2wandb:
+        wandb.finish()
 
-    if not os.path.exists(save_weights_dir):
-        os.makedirs(save_weights_dir)
+    save_weights_dir = './out/model_weights/'
+    os.makedirs(save_weights_dir, exist_ok=True)
 
-    if not os.path.exists(save_plot_dir):
-        os.makedirs(save_plot_dir)
-
-    save_weights_path = save_weights_dir + config["model_name"] + '.h5'
+    save_weights_path = save_weights_dir + config["experiment_name"] + '.h5'
 
     logging.info('Done!\n')
     logging.info('Saving the model into ' + save_weights_path + ' \n')
@@ -68,13 +72,13 @@ def fit_model(model, train_set, val_set, config: Dict[str, Any]) -> List[float]:
     return eval_model(model, val_set)
 
 
-def visualize_layer(model, sample, layer_index = -2, aggr = 'Max'):
+def visualize_layer(model, sample, layer_index=-2, aggr='Max'):
     feature_model = get_intermediate_layer_model(model, layer_index)
 
     feature_maps = feature_model.predict(sample)
     feature_maps = feature_maps[0]
 
-    plt.figure(figsize=(20,20))
+    plt.figure(figsize=(20, 20))
 
     if aggr == 'Max':
         layer_output = np.max(feature_maps, axis=-1)
@@ -84,7 +88,7 @@ def visualize_layer(model, sample, layer_index = -2, aggr = 'Max'):
         layer_output = np.sum(feature_maps, axis=-1)
     else:
         raise ValueError('Invalid aggregation method')
-    
+
     plt.imshow(layer_output)
     plt.savefig('feature_maps.png')
 

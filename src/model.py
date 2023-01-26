@@ -1,8 +1,9 @@
-from typing import List
+import keras
+import os
+
 from keras.applications import Xception
 from keras.layers import Dense, GlobalAveragePooling2D
 from keras.models import Model
-import keras
 
 
 def build_xception_model(freeze_layers: bool = True, cut_layer = None):
@@ -17,10 +18,10 @@ def build_xception_model(freeze_layers: bool = True, cut_layer = None):
 
     # Freeze the layers of the pre-trained model
     if freeze_layers:
-
         for layer in base_model.layers:
             layer.trainable = False
     
+    os.makedirs("out", exist_ok=True)
     keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
 
     return model
