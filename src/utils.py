@@ -9,7 +9,7 @@ def get_optimizer(optimizer: str, learning_rate: float, momentum: Optional[float
     elif optimizer == 'adam':
         optimizer = Adam(learning_rate=learning_rate)
     elif optimizer == 'rmsprop':
-        optimizer = RMSprop(learning_rate=learning_rate)
+        optimizer = RMSprop(learning_rate=learning_rate, momentum=momentum)
     elif optimizer == 'adagrad':
         optimizer = Adagrad(learning_rate=learning_rate)
     elif optimizer == 'adadelta':
