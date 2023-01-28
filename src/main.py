@@ -8,7 +8,7 @@ from typing import Dict, Any, List
 import dataset as dtst
 import tasks
 import utils
-from model import build_xception_model
+from model import build_xception_model, build_xception_model_half_frozen
 
 
 def __parse_args() -> argparse.Namespace:
@@ -109,6 +109,23 @@ def main(args: argparse.Namespace):
 
         print(f'Loss: {loss.mean()} +- {loss.std()}')
         print(f'Accuracy: {accuracy.mean()} +- {accuracy.std()}')
+    
+    elif args.task == 'train_frozen':
+
+
+        ### DATA ###
+        train_dir = args.dataset_dir + '/train'
+        test_dir = args.dataset_dir + '/test'
+        prep = keras.applications.xception.preprocess_input
+
+        train_datagen = dtst.load_dataset(train_dir, preprocess_function = prep)  
+        validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep) 
+
+        ### MODEL ###
+        model = build_xception_model_half_frozen()
+
+        ### TRAIN LOOP ###
+        tasks.train_properly_implemented(model, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)
 
 
 if __name__ == '__main__':

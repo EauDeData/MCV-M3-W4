@@ -74,6 +74,33 @@ def fit_model(model, train_set, val_set, config: Dict[str, Any], log2wandb: bool
     # Return accuracy and loss of the model on the test set
     return eval_model(model, val_set)
 
+def train_properly_implemented(model, train_set, val_set, optimizer_type, learning_rate, epochs, momentum=None):
+    model_name = 'xception'
+    optimizer = utils.get_optimizer(optimizer_type, learning_rate, momentum)
+    
+    model.compile(
+        loss='categorical_crossentropy',
+        optimizer=optimizer,
+        metrics=['accuracy']
+    )
+    
+    wandb_config: Dict[str, Any] = {"model": {}}
+    wandb_config['optimizer'] = {
+        'type': optimizer_type,
+        'learning_rate': learning_rate,
+    }
+    
+    wandb_config['optimizer']['momentum'] = momentum
+    wandb_config['epochs'] = epochs
+    wandb.init(config=wandb_config, project='m3_week4', name=model_name)
+    model.fit(train_set,
+            epochs=epochs,
+            validation_data=val_set,
+            callbacks=[
+                WandbMetricsLogger(),
+                ])
+    
+
 
 def default_train(args, dataset_dir, experiment_name: str = None, log2wandb: bool = True, save_weights: bool = True) -> List[float]:
     ### DATA ###
