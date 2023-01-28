@@ -8,7 +8,7 @@ from typing import Dict, Any, List
 import dataset as dtst
 import tasks
 import utils
-from model import build_xception_model, build_xception_model_half_frozen
+from model import build_xception_model, build_xception_model_half_frozen, build_model_tricks
 
 
 def __parse_args() -> argparse.Namespace:
@@ -123,6 +123,22 @@ def main(args: argparse.Namespace):
 
         ### MODEL ###
         model = build_xception_model_half_frozen(freeze_from=20, freeze_until=60)
+
+        ### TRAIN LOOP ###
+        tasks.train_properly_implemented(model, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)
+
+    elif args.task == 'train_tricks_arch':
+        
+        ### DATA ###
+        train_dir = args.dataset_dir + '/train'
+        test_dir = args.dataset_dir + '/test'
+        prep = keras.applications.xception.preprocess_input
+
+        train_datagen = dtst.load_dataset(train_dir, preprocess_function = prep)  
+        validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep) 
+
+        ### MODEL ###
+        model = build_model_tricks(dropout=True)
 
         ### TRAIN LOOP ###
         tasks.train_properly_implemented(model, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)

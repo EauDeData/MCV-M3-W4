@@ -50,6 +50,25 @@ def build_xception_model_half_frozen(freeze_until: bool = 'last', freeze_from = 
     return model
 
 
+def build_model_tricks(dropout = False, regularizer = False, batch_norm = False):
+    base_model = Xception(weights='imagenet', include_top=False)
+
+    x = base_model.output
+    x = GlobalAveragePooling2D()(x)
+    if regularizer: x = Dense(2048)(x)
+    else: x = Dense(2048, activity_regularizer=keras.regularizers.L1())(x)
+    if batch_norm: x = keras.layers.BatchNormalization()(x)
+    if dropout: x = keras.layers.Dropout(.1)(x)
+    x = keras.layers.RelU()(x)
+    x = Dense(8, activation='softmax')(x)
+
+    # Define the new model
+    model = Model(inputs=base_model.input, outputs=x)
+
+    keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
+
+    return model
+
 def get_intermediate_layer_model(model, layer_index: int = -1) -> Model:
     """
     Returns the intermediate layers model from a given model. 
@@ -61,6 +80,3 @@ def get_intermediate_layer_model(model, layer_index: int = -1) -> Model:
     intermediate_layer_model = Model(inputs=model.input,
                                         outputs=model.layers[layer_index].output)
     return intermediate_layer_model
-
-
-
