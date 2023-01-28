@@ -34,14 +34,14 @@ def __parse_args() -> argparse.Namespace:
                         help='Path to the dataset directory.')
     parser.add_argument('--patches_dataset_dir', type=str, default=None,
                         help='Path to the patches dataset directory.')
-    parser.add_argument('--image_size', type=int, default=[224], nargs='*',
+    parser.add_argument('--image_size', type=int, default=[32], nargs='*',
                         help='Patch size.')
     # parser.add_argument('--color_mode', type=str, default=['rgb'], nargs='*', choices=['rgb', 'grayscale'],
     #                     help='Color mode.')
     parser.add_argument('--train_augmentations_file', type=str, default="configs/augmentations/train_augmentations.json",
                         help='Path to the train augmentations file.')
     # Training args
-    parser.add_argument('--batch_size', type=int, default=32,
+    parser.add_argument('--batch_size', type=int, default=8,
                         help='Batch size.')
     parser.add_argument('--epochs', type=int, default=1,
                         help='Number of epochs.')

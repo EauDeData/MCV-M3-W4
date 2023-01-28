@@ -38,13 +38,13 @@ def build_xception_model_half_frozen(freeze_until: bool = 'last', freeze_from = 
 
     # Define the new model
     model = Model(inputs=base_model.input, outputs=x)
-    trainable = [layer for layer in  model.layers if sum([x in str(layer) for x in ['Conv', 'Dense']])]
+    trainable = [n for n, layer in  enumerate(model.layers) if sum([x in str(layer) for x in ['Conv', 'Dense']])]
 
     freeze = trainable[freeze_from:] if freeze_until == 'last' else trainable[freeze_from:freeze_until]
 
     # Freeze the layers of the pre-trained model
-    for layer in freeze:
-        layer.trainable = False
+    for n, layer in enumerate(model.layers):
+        if n in freeze: layer.trainable = False
 
     keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
 
