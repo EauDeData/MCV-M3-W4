@@ -6,12 +6,13 @@ import wandb
 import optuna
 import datetime
 import keras
+import pickle
 from wandb.keras import WandbMetricsLogger
 from typing import Dict, Any, List
 from keras.models import Model
 
 import utils
-from model import build_xception_model, get_intermediate_layer_model
+from model import build_xception_model, get_intermediate_layer_model, build_model_tricks
 import dataset as dtst
 
 
@@ -185,10 +186,18 @@ def optuna_search(args, dataset_dir) -> List[float]:
             preprocess_function=prep
         )
 
+        freeze_from = trial.suggest_float('freeze_from', 0, 0.9)
+        freeze_percent = trial.suggest_float('freeze_percent', 0.1, 1.0 - freeze_from)
+
         config: Dict[str, Any] = {
             "experiment_name": f'xception_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}',
             "model": {
                 "name": "Xception",
+                "dropout": trial.suggest_categorical("dropout", [True, False]),
+                "batch_norm": trial.suggest_categorical("batch_norm", [True, False]),
+                "regularizer": trial.suggest_categorical("regularizer", [True, False]),
+                "freeze_from": freeze_from,
+                "freeze_percent": freeze_percent,
             },
             "optimizer": {
                 'type': trial.suggest_categorical("optimizer", ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam']),
@@ -199,11 +208,17 @@ def optuna_search(args, dataset_dir) -> List[float]:
             "dataset_path": args.dataset_dir,
         }
 
-        model = build_xception_model()
+        model = build_model_tricks(
+            dropout=config['model']['dropout'],
+            batch_norm=config['model']['batch_norm'],
+            regularizer=config['model']['regularizer'],
+            freeze_from=config['model']['freeze_from'],
+            freeze_percent=config['model']['freeze_percent'],
+        )
         return fit_model(model, train_set, val_set, config, log2wandb=False, save_weights=False)[1]
 
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=224)
+    study.optimize(objective, n_trials=2)
 
     print("Number of finished trials: {}".format(len(study.trials)))
 
@@ -215,6 +230,18 @@ def optuna_search(args, dataset_dir) -> List[float]:
     print("  Params: ")
     for key, value in trial.params.items():
         print("    {}: {}".format(key, value))
+
+    # Save report with accuracy and best params to file
+    with open(f'report_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}.txt', 'w') as f:
+        f.write(f'Best accuracy: {trial.value}\n\n')
+
+        f.write('Best params: \n')
+        for key, value in trial.params.items():
+            f.write(f'{key}: {value}\n')
+
+    # Save study object to file
+    with open(f'study_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}.pkl', 'wb') as f:
+        pickle.dump(study, f)
 
     return study
 

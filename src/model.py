@@ -50,7 +50,7 @@ def build_xception_model_half_frozen(freeze_until: bool = 'last', freeze_from = 
     return model
 
 
-def build_model_tricks(dropout = False, regularizer = False, batch_norm = False):
+def build_model_tricks(dropout: bool = False, regularizer: bool = False, batch_norm: bool = False, freeze_from: float = 0, freeze_percent: float = 1.0):
     base_model = Xception(weights='imagenet', include_top=False)
 
     x = base_model.output
@@ -63,8 +63,16 @@ def build_model_tricks(dropout = False, regularizer = False, batch_norm = False)
 
     # Define the new model
     model = Model(inputs=base_model.input, outputs=x)
+    trainable = [n for n, layer in  enumerate(base_model.layers) if sum([x in str(layer) for x in ['Conv', 'Dense', 'conv', 'dense', 'Batch']])]
+    freeze_from = int(len(trainable) * freeze_from)
+    freeze_until = freeze_from + int(len(trainable) * freeze_percent)
+    freeze = trainable[freeze_from:freeze_until]
 
-    keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
+    # Freeze the layers of the pre-trained model
+    for n, layer in enumerate(base_model.layers):
+        if n in freeze: layer.trainable = False
+
+    # keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
 
     return model
 
