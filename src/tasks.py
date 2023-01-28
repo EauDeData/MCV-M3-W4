@@ -101,7 +101,34 @@ def train_properly_implemented(model, train_set, val_set, optimizer_type, learni
                 WandbMetricsLogger(),
                 ])
     
-
+def train_tricks_train(model, train_set, val_set, optimizer_type, learning_rate, epochs, reduce = 0.1, momentum=None):
+    print('EPOCHES', epochs)
+    model_name = 'xception'
+    optimizer = utils.get_optimizer(optimizer_type, learning_rate, momentum)
+    
+    model.compile(
+        loss='categorical_crossentropy',
+        optimizer=optimizer,
+        metrics=['accuracy']
+    )
+    
+    wandb_config: Dict[str, Any] = {"model": {}}
+    wandb_config['optimizer'] = {
+        'type': optimizer_type,
+        'learning_rate': learning_rate,
+    }
+    
+    wandb_config['optimizer']['momentum'] = momentum
+    wandb_config['epochs'] = epochs
+    wandb.init(config=wandb_config, project='m3_week4', name=model_name)
+    scheduler = keras.callbacks.ReduceLROnPlateau(monitor = "loss", min_delta = 0.001, factor = reduce, patience = 5)
+    print('TRAINING WITH SCHEDULER')
+    model.fit(train_set,
+            epochs=epochs,
+            validation_data=val_set,
+            callbacks=[scheduler,
+                WandbMetricsLogger(),
+                ])
 
 def default_train(args, dataset_dir, experiment_name: str = None, log2wandb: bool = True, save_weights: bool = True) -> List[float]:
     ### DATA ###
