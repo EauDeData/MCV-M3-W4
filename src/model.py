@@ -55,12 +55,11 @@ def build_model_tricks(dropout = False, regularizer = False, batch_norm = False)
 
     x = base_model.output
     x = GlobalAveragePooling2D()(x)
-    if regularizer: x = Dense(2048)(x)
-    else: x = Dense(2048, activity_regularizer=keras.regularizers.L1())(x)
     if batch_norm: x = keras.layers.BatchNormalization()(x)
     if dropout: x = keras.layers.Dropout(.1)(x)
-    x = keras.layers.RelU()(x)
-    x = Dense(8, activation='softmax')(x)
+    x = keras.layers.ReLU()(x)
+    if regularizer: x = Dense(8, activation = 'softmax', activity_regularizer=keras.regularizers.L1())(x)
+    else: x = Dense(8, activation='softmax')(x)
 
     # Define the new model
     model = Model(inputs=base_model.input, outputs=x)
