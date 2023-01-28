@@ -34,16 +34,16 @@ def __parse_args() -> argparse.Namespace:
                         help='Path to the dataset directory.')
     parser.add_argument('--patches_dataset_dir', type=str, default=None,
                         help='Path to the patches dataset directory.')
-    parser.add_argument('--image_size', type=int, default=[32], nargs='*',
+    parser.add_argument('--image_size', type=int, default=[224], nargs='*',
                         help='Patch size.')
     # parser.add_argument('--color_mode', type=str, default=['rgb'], nargs='*', choices=['rgb', 'grayscale'],
     #                     help='Color mode.')
     parser.add_argument('--train_augmentations_file', type=str, default="configs/augmentations/train_augmentations.json",
                         help='Path to the train augmentations file.')
     # Training args
-    parser.add_argument('--batch_size', type=int, default=8,
+    parser.add_argument('--batch_size', type=int, default=32,
                         help='Batch size.')
-    parser.add_argument('--epochs', type=int, default=1,
+    parser.add_argument('--epochs', type=int, default=50,
                         help='Number of epochs.')
     # parser.add_argument('--steps_per_epoch', type=int, default=-1,
     #                     help='Number of steps per epoch. If -1, it will be set to the number of samples in the dataset divided by the batch size.')
@@ -54,7 +54,7 @@ def __parse_args() -> argparse.Namespace:
     # Optimizer args
     parser.add_argument('--optimizer', type=str, default='adam',
                         help='Optimizer.')
-    parser.add_argument('--learning_rate', type=float, default=0.001,
+    parser.add_argument('--learning_rate', type=float, default=1e-4,
                         help='Learning rate.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='Momentum.')
@@ -122,7 +122,7 @@ def main(args: argparse.Namespace):
         validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep) 
 
         ### MODEL ###
-        model = build_xception_model_half_frozen()
+        model = build_xception_model_half_frozen(freeze_from=20, freeze_until=60)
 
         ### TRAIN LOOP ###
         tasks.train_properly_implemented(model, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)

@@ -75,6 +75,7 @@ def fit_model(model, train_set, val_set, config: Dict[str, Any], log2wandb: bool
     return eval_model(model, val_set)
 
 def train_properly_implemented(model, train_set, val_set, optimizer_type, learning_rate, epochs, momentum=None):
+    print('EPOCHES', epochs)
     model_name = 'xception'
     optimizer = utils.get_optimizer(optimizer_type, learning_rate, momentum)
     
