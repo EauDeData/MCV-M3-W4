@@ -43,11 +43,7 @@ def __parse_args() -> argparse.Namespace:
     # Training args
     parser.add_argument('--batch_size', type=int, default=32,
                         help='Batch size.')
-<<<<<<< HEAD
     parser.add_argument('--epochs', type=int, default=5,
-=======
-    parser.add_argument('--epochs', type=int, default=100,
->>>>>>> fada837120b1e2e8e307d2016d596cbf6c97b56f
                         help='Number of epochs.')
     # parser.add_argument('--steps_per_epoch', type=int, default=-1,
     #                     help='Number of steps per epoch. If -1, it will be set to the number of samples in the dataset divided by the batch size.')
