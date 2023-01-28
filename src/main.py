@@ -58,6 +58,9 @@ def __parse_args() -> argparse.Namespace:
                         help='Learning rate.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='Momentum.')
+    # Optuna args
+    parser.add_argument('--n_trials', type=int, default=200,
+                        help='Number of trials for the optuna search.')
 
     args = parser.parse_args()
 
@@ -82,7 +85,7 @@ def main(args: argparse.Namespace):
         tasks.eval_model(model, validation_datagen)
 
     elif args.task == 'optuna_search':
-        tasks.optuna_search(args, args.dataset_dir)
+        tasks.optuna_search(args, args.dataset_dir, args.n_trials)
 
     elif args.task == 'cross_validation':
         # List the directories in the dataset directory

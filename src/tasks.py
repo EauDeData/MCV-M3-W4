@@ -179,7 +179,7 @@ def default_train(args, dataset_dir, experiment_name: str = None, log2wandb: boo
     return fit_model(model, train_datagen, validation_datagen, config, log2wandb, save_weights)
 
 
-def optuna_search(args, dataset_dir) -> List[float]:
+def optuna_search(args, dataset_dir, n_trials=200) -> List[float]:
     def objective(trial):
         train_dir = dataset_dir + '/train'
         test_dir = dataset_dir + '/test'
@@ -245,7 +245,7 @@ def optuna_search(args, dataset_dir) -> List[float]:
         return fit_model(model, train_set, val_set, config, log2wandb=False, save_weights=False)[1]
 
     study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=2)
+    study.optimize(objective, n_trials=n_trials)
 
     print("Number of finished trials: {}".format(len(study.trials)))
 
