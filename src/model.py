@@ -29,6 +29,27 @@ def build_xception_model(weights = None, freeze_layers: bool = True, cut_layer =
 
     return model
 
+def build_xception_model_half_frozen(freeze_until: bool = 'last', freeze_from = 0):
+    base_model = Xception(weights='imagenet', include_top=False)
+
+    x = base_model.output
+    x = GlobalAveragePooling2D()(x)
+    x = Dense(8, activation='softmax')(x)
+
+    # Define the new model
+    model = Model(inputs=base_model.input, outputs=x)
+    trainable = [layer for layer in  model.layers if sum([x in str(layer) for x in ['Conv', 'Dense']])]
+
+    freeze = trainable[freeze_from:] if freeze_until == 'last' else trainable[freeze_from:freeze_until]
+
+    # Freeze the layers of the pre-trained model
+    for layer in freeze:
+        layer.trainable = False
+
+    keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
+
+    return model
+
 
 def get_intermediate_layer_model(model, layer_index: int = -1) -> Model:
     """
