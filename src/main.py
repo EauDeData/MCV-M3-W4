@@ -43,7 +43,11 @@ def __parse_args() -> argparse.Namespace:
     # Training args
     parser.add_argument('--batch_size', type=int, default=32,
                         help='Batch size.')
+<<<<<<< HEAD
     parser.add_argument('--epochs', type=int, default=5,
+=======
+    parser.add_argument('--epochs', type=int, default=100,
+>>>>>>> fada837120b1e2e8e307d2016d596cbf6c97b56f
                         help='Number of epochs.')
     # parser.add_argument('--steps_per_epoch', type=int, default=-1,
     #                     help='Number of steps per epoch. If -1, it will be set to the number of samples in the dataset divided by the batch size.')
@@ -52,7 +56,7 @@ def __parse_args() -> argparse.Namespace:
     parser.add_argument('--log2wandb', type=bool, default=False,
                         help='Log to wandb.')
     # Optimizer args
-    parser.add_argument('--optimizer', type=str, default='adam',
+    parser.add_argument('--optimizer', type=str, default='rmsprop',
                         help='Optimizer.')
     parser.add_argument('--learning_rate', type=float, default=1e-4,
                         help='Learning rate.')
@@ -138,10 +142,26 @@ def main(args: argparse.Namespace):
         validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep) 
 
         ### MODEL ###
-        model = build_model_tricks(dropout=True)
+        model = build_model_tricks(dropout=False, batch_norm=False, regularizer=True)
 
         ### TRAIN LOOP ###
         tasks.train_properly_implemented(model, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)
+    
+    elif args.task == 'train_tricks_train':
+        
+        ### DATA ###
+        train_dir = args.dataset_dir + '/train'
+        test_dir = args.dataset_dir + '/test'
+        prep = keras.applications.xception.preprocess_input
+
+        train_datagen = dtst.load_dataset(train_dir, preprocess_function = prep)  
+        validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep) 
+
+        ### MODEL ###
+        model = build_model_tricks(dropout=False, batch_norm=False, regularizer=True)
+
+        ### TRAIN LOOP ###
+        tasks.train_tricks_train(model, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, 0.1, args.momentum)
 
 
 if __name__ == '__main__':
