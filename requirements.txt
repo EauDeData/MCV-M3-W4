@@ -2,5 +2,6 @@ numpy
 matplotlib
 wandb
 optuna
+scipy
 tensorflow
 keras
