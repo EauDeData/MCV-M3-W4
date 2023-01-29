@@ -50,3 +50,4 @@ l10n/
 /wandb
 model_weights/
 model_plots/
+optuna-vis/
