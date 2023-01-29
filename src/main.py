@@ -3,11 +3,9 @@ import argparse
 import keras
 import datetime
 import numpy as np
-from typing import Dict, Any, List
 
 import dataset as dtst
 import tasks
-import utils
 from model import build_xception_model, build_xception_model_half_frozen, build_model_tricks
 
 
@@ -38,28 +36,28 @@ def __parse_args() -> argparse.Namespace:
                         help='Patch size.')
     # parser.add_argument('--color_mode', type=str, default=['rgb'], nargs='*', choices=['rgb', 'grayscale'],
     #                     help='Color mode.')
-    parser.add_argument('--train_augmentations_file', type=str, default="configs/augmentations/train_augmentations.json",
+    parser.add_argument('--train_augmentations_file', type=str, default=None, #"configs/augmentations/train_augmentations.json",
                         help='Path to the train augmentations file.')
     # Training args
     parser.add_argument('--batch_size', type=int, default=32,
                         help='Batch size.')
-    parser.add_argument('--epochs', type=int, default=5,
+    parser.add_argument('--epochs', type=int, default=1,
                         help='Number of epochs.')
     # parser.add_argument('--steps_per_epoch', type=int, default=-1,
     #                     help='Number of steps per epoch. If -1, it will be set to the number of samples in the dataset divided by the batch size.')
     # parser.add_argument('--validation_steps', type=int, default=-1,
     #                     help='Number of validation steps. If -1, it will be set to the number of samples in the validation dataset divided by the batch size.')
-    parser.add_argument('--log2wandb', type=bool, default=False,
+    parser.add_argument('--log2wandb', type=bool, default=True,
                         help='Log to wandb.')
     # Optimizer args
-    parser.add_argument('--optimizer', type=str, default='rmsprop',
+    parser.add_argument('--optimizer', type=str, default='adam',
                         help='Optimizer.')
     parser.add_argument('--learning_rate', type=float, default=1e-4,
                         help='Learning rate.')
     parser.add_argument('--momentum', type=float, default=0.9,
                         help='Momentum.')
     # Optuna args
-    parser.add_argument('--n_trials', type=int, default=200,
+    parser.add_argument('--n_trials', type=int, default=4,
                         help='Number of trials for the optuna search.')
 
     args = parser.parse_args()

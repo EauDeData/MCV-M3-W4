@@ -66,11 +66,11 @@ def fit_model(model, train_set, val_set, config: Dict[str, Any], log2wandb: bool
     save_weights_path = save_weights_dir + config["experiment_name"] + '.h5'
 
     logging.info('Done!\n')
-    logging.info('Saving the model into ' + save_weights_path + ' \n')
 
-    model.save_weights(save_weights_path)
-
-    logging.info('Done!\n')
+    if save_weights:
+        logging.info('Saving the model into ' + save_weights_path + ' \n')
+        model.save_weights(save_weights_path)
+        logging.info('Done!\n')
 
     # Return accuracy and loss of the model on the test set
     return eval_model(model, val_set)
@@ -137,7 +137,11 @@ def default_train(args, dataset_dir, experiment_name: str = None, log2wandb: boo
     test_dir = dataset_dir + '/test'
 
     prep = keras.applications.xception.preprocess_input
-    train_augmentations = utils.load_config(args.train_augmentations_file)
+
+    if args.train_augmentations_file is not None:
+        train_augmentations = utils.load_config(args.train_augmentations_file)
+    else:
+        train_augmentations = {}
 
     train_datagen = dtst.load_dataset(
         train_dir, 
@@ -223,8 +227,8 @@ def optuna_search(args, dataset_dir, n_trials=200) -> List[float]:
                 "dropout": trial.suggest_categorical("dropout", [True, False]),
                 "batch_norm": trial.suggest_categorical("batch_norm", [True, False]),
                 "regularizer": trial.suggest_categorical("regularizer", [True, False]),
-                "freeze_from": freeze_from,
-                "freeze_percent": freeze_percent,
+                "freeze_from": 0,
+                "freeze_percent": 1,
             },
             "optimizer": {
                 'type': trial.suggest_categorical("optimizer", ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam']),
