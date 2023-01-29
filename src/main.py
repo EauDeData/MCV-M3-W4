@@ -3,6 +3,7 @@ import argparse
 import keras
 import datetime
 import numpy as np
+import matplotlib.pyplot as plt
 
 import dataset as dtst
 import tasks
@@ -166,6 +167,95 @@ def main(args: argparse.Namespace):
     elif args.task == 'results_vis':
         
         model, _, val_set = tasks.build_optuna_model(args)
+        model.load_weights()
+
+        y_score = None
+        predicted_labels = None
+        train_labels = None
+        test_labels = None
+
+        from sklearn.preprocessing import LabelBinarizer
+        from sklearn.metrics import RocCurveDisplay
+
+        label_binarizer = LabelBinarizer().fit(train_labels)
+        y_onehot_test = label_binarizer.transform(test_labels)
+        y_onehot_test.shape  # (n_samples, n_classes)
+
+        class_of_interest = "coast"
+        n_classes = 8
+        class_id = np.flatnonzero(label_binarizer.classes_ == class_of_interest)[0]
+        y_test = test_labels
+        target_names = list(set(y_test))
+
+        from sklearn.metrics import roc_auc_score
+
+        micro_roc_auc_ovr = roc_auc_score(
+            test_labels,
+            y_score,
+            multi_class="ovr",
+            average="micro",
+        )
+
+        from sklearn.metrics import roc_curve, auc
+
+        # store the fpr, tpr, and roc_auc for all averaging strategies
+        fpr, tpr, roc_auc = dict(), dict(), dict()
+        # Compute micro-average ROC curve and ROC area
+        fpr["micro"], tpr["micro"], _ = roc_curve(y_onehot_test.ravel(), y_score.ravel())
+        roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+        for i in range(8):
+            fpr[i], tpr[i], _ = roc_curve(y_onehot_test[:, i], y_score[:, i])
+            roc_auc[i] = auc(fpr[i], tpr[i])
+
+        fpr_grid = np.linspace(0.0, 1.0, 1000)
+
+        # Interpolate all ROC curves at these points
+        mean_tpr = np.zeros_like(fpr_grid)
+
+        for i in range(n_classes):
+            mean_tpr += np.interp(fpr_grid, fpr[i], tpr[i])  # linear interpolation
+
+        # Average it and compute AUC
+        mean_tpr /= n_classes
+
+        fpr["macro"] = fpr_grid
+        tpr["macro"] = mean_tpr
+        roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+        macro_roc_auc_ovr = roc_auc_score(
+            y_test,
+            y_score,
+            multi_class="ovr",
+            average="macro",
+        )
+
+
+        from itertools import cycle
+
+        fig, ax = plt.subplots(figsize=(18, 18))
+
+
+
+        colors = cycle(["aqua", "darkorange", "cornflowerblue"])
+        for class_id, color in zip(range(8), colors):
+            RocCurveDisplay.from_predictions(
+                y_onehot_test[:, class_id],
+                y_score[:, class_id],
+                name=f"ROC curve for {target_names[class_id]}",
+                ax=ax,
+            )
+
+        plt.plot([0, 1], [0, 1], "k--", label="ROC curve for chance level (AUC = 0.5)")
+        fig.set_size_inches(18.5, 10.5, forward=False)
+        plt.axis("square")
+        plt.xlabel("False Positive Rate")
+        plt.ylabel("True Positive Rate")
+        plt.title("ROC Curve for classes with Area Under the Curve (AOC)")
+        plt.legend()
+        plt.show()
+
+
 
 if __name__ == '__main__':
     args = __parse_args()
