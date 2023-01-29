@@ -227,8 +227,8 @@ def optuna_search(args, dataset_dir, n_trials=200) -> List[float]:
                 "dropout": trial.suggest_categorical("dropout", [True, False]),
                 "batch_norm": trial.suggest_categorical("batch_norm", [True, False]),
                 "regularizer": trial.suggest_categorical("regularizer", [True, False]),
-                "freeze_from": 0,
-                "freeze_percent": 1,
+                "freeze_from": freeze_from,
+                "freeze_percent": freeze_percent,
             },
             "optimizer": {
                 'type': trial.suggest_categorical("optimizer", ['sgd', 'rmsprop', 'adagrad', 'adadelta', 'adam', 'adamax', 'nadam']),
