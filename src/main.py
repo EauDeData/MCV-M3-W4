@@ -4,6 +4,7 @@ import keras
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 import dataset as dtst
 import tasks
@@ -166,8 +167,9 @@ def main(args: argparse.Namespace):
 
     elif args.task == 'results_vis':
         
-        model, train_set, val_set = tasks.build_and_train_optuna_model(args)
-        model.load_weights('out/model_weights/xception_best_model_20230129-134327.h5')
+        args.epochs = 1
+        model, train_set, val_set = tasks.build_optuna_model(args)
+        model.load_weights('out/model_weights/xception_best_model_20230129-145950.h5')
         classes = (val_set.class_indices)
 
         #model = build_xception_model(weights = './out/model_weights/xception_20230128-221841.h5')
@@ -176,101 +178,74 @@ def main(args: argparse.Namespace):
         from keras.preprocessing.image import ImageDataGenerator
 
         test_steps = val_set.n // args.batch_size
-        y_score = model.predict(val_set, steps=test_steps)
-
+        y_score = []
         test_labels = []
         predicted_labels = []
+        labels_one_hot = []
         string_labels = sorted(list(classes.keys()), key = lambda x: classes[x])
-        for score in y_score:
-            predicted_labels.append(string_labels[np.argmax(score)])
 
-        for n, (_, label_batch) in enumerate(val_set):
+        for n, (images, label_batch) in enumerate(val_set):
 
-            for label in label_batch:
+            for image, label in zip(images, label_batch):
+                prediction = model(image[None, :, :, :])[0]
+                labels_one_hot.append(label)
                 test_labels.append(string_labels[np.argmax(label)])
-            if len(test_labels) == len(y_score):
+                y_score.append(prediction)
+                predicted_labels.append(string_labels[np.argmax(prediction)])
+
+
+            if n == test_steps:
                 break
+        #print(len(y_score), len(predicted_labels), len(test_labels))
+        y_score = np.array(y_score)
+        import scikitplot as skplt
+        skplt.metrics.plot_roc(test_labels, y_score)
 
-        from sklearn.preprocessing import LabelBinarizer
-        from sklearn.metrics import RocCurveDisplay
-
-        label_binarizer = LabelBinarizer().fit(test_labels)
-        y_onehot_test = label_binarizer.transform(test_labels)
-        y_onehot_test.shape  # (n_samples, n_classes)
-
-        class_of_interest = "coast"
-        n_classes = 8
-        class_id = np.flatnonzero(label_binarizer.classes_ == class_of_interest)[0]
-        y_test = test_labels
-        target_names = list(set(y_test))
-
-        from sklearn.metrics import roc_auc_score
-
-        micro_roc_auc_ovr = roc_auc_score(
-            test_labels,
-            y_score,
-            multi_class="ovr",
-            average="micro",
-        )
-
-        from sklearn.metrics import roc_curve, auc
-
-        # store the fpr, tpr, and roc_auc for all averaging strategies
-        fpr, tpr, roc_auc = dict(), dict(), dict()
-        # Compute micro-average ROC curve and ROC area
-        fpr["micro"], tpr["micro"], _ = roc_curve(y_onehot_test.ravel(), y_score.ravel())
-        roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
-
-        for i in range(8):
-            fpr[i], tpr[i], _ = roc_curve(y_onehot_test[:, i], y_score[:, i])
-            roc_auc[i] = auc(fpr[i], tpr[i])
-
-        fpr_grid = np.linspace(0.0, 1.0, 1000)
-
-        # Interpolate all ROC curves at these points
-        mean_tpr = np.zeros_like(fpr_grid)
-
-        for i in range(n_classes):
-            mean_tpr += np.interp(fpr_grid, fpr[i], tpr[i])  # linear interpolation
-
-        # Average it and compute AUC
-        mean_tpr /= n_classes
-
-        fpr["macro"] = fpr_grid
-        tpr["macro"] = mean_tpr
-        roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
-
-        macro_roc_auc_ovr = roc_auc_score(
-            y_test,
-            y_score,
-            multi_class="ovr",
-            average="macro",
-        )
-
-
-        from itertools import cycle
-
-        fig, ax = plt.subplots(figsize=(18, 18))
-
-
-
-        colors = cycle(["aqua", "darkorange", "cornflowerblue"])
-        for class_id, color in zip(range(8), colors):
-            RocCurveDisplay.from_predictions(
-                y_onehot_test[:, class_id],
-                y_score[:, class_id],
-                name=f"ROC curve for {target_names[class_id]}",
-                ax=ax,
-            )
-
-        plt.plot([0, 1], [0, 1], "k--", label="ROC curve for chance level (AUC = 0.5)")
-        fig.set_size_inches(18.5, 10.5, forward=False)
-        plt.axis("square")
-        plt.xlabel("False Positive Rate")
-        plt.ylabel("True Positive Rate")
-        plt.title("ROC Curve for classes with Area Under the Curve (AOC)")
-        plt.legend()
         plt.savefig('ROCK!!!.png')
+        plt.clf()
+
+
+        # Prepare data for confusion matrix
+        axs_dict = classes
+        cat = len(axs_dict)
+        matrix = np.zeros((cat, cat))
+        for gt, pred in zip(test_labels, predicted_labels):
+            matrix[axs_dict[gt], axs_dict[pred]] += 1
+
+        matrixrel = np.zeros((cat, cat))
+        for x in test_labels:
+            for y in predicted_labels:
+                matrixrel[axs_dict[x], axs_dict[y]] = round(100 * matrix[axs_dict[x], axs_dict[y]] / matrix[axs_dict[x],].sum())
+                
+        # Plot confusion matrix
+
+        cmap = sns.cubehelix_palette(start=1.6, light=0.8, as_cmap=True,)
+        fig, axs = plt.subplots(ncols = 2, figsize = (10, 4))
+        ax = axs[0]
+
+        sns.heatmap(matrix.astype(int), annot=True, cmap = cmap, ax = ax, cbar = False)
+        ax.set_ylabel('GT')
+        ax.set_xlabel("Predicted")
+
+
+        ax.set_title("Absolute count")
+        ax.set_xticks(list(range(len(axs_dict))), rotation = 45) # Rotates X-Axis Ticks by 45-degrees
+        ax.set_yticks(list(range(len(axs_dict))), rotation = 45) # Rotates X-Axis Ticks by 45-degrees
+
+
+        ax.set_yticklabels(axs_dict, rotation = 20)
+        ax.set_xticklabels(axs_dict, rotation = 45)
+
+
+        sns.heatmap(matrixrel, annot=True, cmap = cmap, ax = axs[1], cbar = False, )
+        ax = axs[1]
+        ax.set_title("Relative count (%)")
+        ax.set_yticklabels([], rotation = 0)
+        ax.set_xticklabels(axs_dict, rotation = 45)
+        ax.set_xlabel("Predicted")
+
+        fig.suptitle('Confusion matrix for test set predictions')
+        plt.savefig('MATRIX.png')
 
 
 
