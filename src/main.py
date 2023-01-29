@@ -17,8 +17,8 @@ def __parse_args() -> argparse.Namespace:
         argparse.Namespace: Arguments.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--task', type=str, default='optuna_search',
-                        help='Task to perform: [default_train, evaluate, cross_validation, optuna_search]')
+    parser.add_argument('--task', type=str, default='optuna_train',
+                        help='Task to perform: [default_train, evaluate, cross_validation, optuna_search, optuna_train]')
     # Model args
     # parser.add_argument('--model_config_file', type=str, default='model_configs/arquitecture1/encoder_3_layers_64_units.json',
     #                     help='Path to the model configuration file.')
@@ -159,6 +159,9 @@ def main(args: argparse.Namespace):
 
         ### TRAIN LOOP ###
         tasks.train_tricks_train(model, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, 0.1, args.momentum)
+
+    elif args.task == 'optuna_train':
+        tasks.build_and_train_optuna_model(args)
 
 
 if __name__ == '__main__':

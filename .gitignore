@@ -51,3 +51,4 @@ l10n/
 model_weights/
 model_plots/
 optuna-vis/
+virtualenv/

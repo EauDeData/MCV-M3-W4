@@ -277,6 +277,85 @@ def optuna_search(args, dataset_dir, n_trials=200) -> List[float]:
     return study
 
 
+def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt"):
+    # Load dataset
+    dataset_dir = args.dataset_dir
+    train_dir = dataset_dir + '/train'
+    test_dir = dataset_dir + '/test'
+
+    # Load report with best params
+    with open(report_file, 'r') as f:
+        lines = f.readlines()
+
+    # Get best params
+    best_params = {}
+    for line in lines[3:]:
+        key, value = line.split(': ')
+        best_params[key] = value.strip()
+
+    augmentations = {
+        'rotation_range': float(best_params['rotation_range']),
+        'width_shift_range': float(best_params['width_shift_range']),
+        'height_shift_range': float(best_params['height_shift_range']),
+        'shear_range': float(best_params['shear_range']),
+        'zoom_range': float(best_params['zoom_range']),
+        'horizontal_flip': best_params['horizontal_flip'] == 'True',
+        'vertical_flip': best_params['vertical_flip'] == 'True',
+        'brightness_range': (float(best_params['brightness_range_min']), float(best_params['brightness_range_max'])),
+        'fill_mode': best_params['fill_mode'],
+        'cval': float(best_params['cval']),
+    }
+
+    config = {
+        "experiment_name": f'xception_best_model_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}',
+        "model": {
+            "name": "Xception",
+            "dropout": best_params['dropout'] == 'True',
+            "batch_norm": best_params['batch_norm'] == 'True',
+            "regularizer": best_params['regularizer'] == 'True',
+            "freeze_from": float(best_params['freeze_from']),
+            "freeze_percent": float(best_params['freeze_percent']),
+        },
+        "optimizer": {
+            'type': best_params['optimizer'],
+            'learning_rate': float(best_params['learning_rate']),
+            'momentum': float(best_params['momentum']),
+        },
+        "epochs": args.epochs,
+        "dataset_path": args.dataset_dir,
+    }
+
+    # Preprocess function
+    prep = keras.applications.xception.preprocess_input
+
+    # Load dataset
+    train_set = dtst.load_dataset(
+        train_dir,
+        target_size=args.image_size[0],
+        batch_size=args.batch_size,
+        preprocess_function=prep,
+        augmentations=augmentations
+    )
+    val_set = dtst.load_dataset(
+        test_dir,
+        target_size=args.image_size[0],
+        batch_size=args.batch_size,
+        preprocess_function=prep
+    )
+
+    # Build model
+    model = build_model_tricks(
+        dropout=config['model']['dropout'],
+        batch_norm=config['model']['batch_norm'],
+        regularizer=config['model']['regularizer'],
+        freeze_from=config['model']['freeze_from'],
+        freeze_percent=config['model']['freeze_percent'],
+    )
+
+    # Train model
+    fit_model(model, train_set, val_set, config, log2wandb=True, save_weights=True)
+
+
 def visualize_layer(model, sample, layer_index=-2, aggr='Max'):
     feature_model = get_intermediate_layer_model(model, layer_index)
 

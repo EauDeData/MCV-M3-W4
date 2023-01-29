@@ -1,0 +1,22 @@
+Best accuracy: 0.9789343476295471
+
+Best params: 
+rotation_range: 10
+width_shift_range: 0.10045498790407341
+height_shift_range: 0.2793343304802199
+shear_range: 0.12591782148645403
+zoom_range: 0.06133149153304277
+horizontal_flip: True
+vertical_flip: True
+brightness_range_min: 0.9732289742688427
+brightness_range_max: 0.31295197561809296
+fill_mode: constant
+cval: 0.8540638795769296
+freeze_from: 0.5088372121143765
+freeze_percent: 0.13645992960265063
+dropout: True
+batch_norm: False
+regularizer: True
+optimizer: adamax
+learning_rate: 0.00027626224470445146
+momentum: 0.8609730001402209
