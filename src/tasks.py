@@ -431,6 +431,7 @@ def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt
 
     # Train model
     fit_model(model, train_set, val_set, config, log2wandb=True, save_weights=True)
+    return model, train_set, val_set
 
 
 def visualize_layer(model, sample, layer_index=-2, aggr='Max'):

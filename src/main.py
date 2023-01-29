@@ -166,18 +166,35 @@ def main(args: argparse.Namespace):
 
     elif args.task == 'results_vis':
         
-        model, _, val_set = tasks.build_optuna_model(args)
-        model.load_weights()
+        model, train_set, val_set = tasks.build_and_train_optuna_model(args)
+        model.load_weights('out/model_weights/xception_best_model_20230129-134327.h5')
+        classes = (val_set.class_indices)
 
-        y_score = None
-        predicted_labels = None
-        train_labels = None
-        test_labels = None
+        #model = build_xception_model(weights = './out/model_weights/xception_20230128-221841.h5')
+
+        # make predictions on the test data
+        from keras.preprocessing.image import ImageDataGenerator
+
+        test_steps = val_set.n // args.batch_size
+        y_score = model.predict(val_set, steps=test_steps)
+
+        test_labels = []
+        predicted_labels = []
+        string_labels = sorted(list(classes.keys()), key = lambda x: classes[x])
+        for score in y_score:
+            predicted_labels.append(string_labels[np.argmax(score)])
+
+        for n, (_, label_batch) in enumerate(val_set):
+
+            for label in label_batch:
+                test_labels.append(string_labels[np.argmax(label)])
+            if len(test_labels) == len(y_score):
+                break
 
         from sklearn.preprocessing import LabelBinarizer
         from sklearn.metrics import RocCurveDisplay
 
-        label_binarizer = LabelBinarizer().fit(train_labels)
+        label_binarizer = LabelBinarizer().fit(test_labels)
         y_onehot_test = label_binarizer.transform(test_labels)
         y_onehot_test.shape  # (n_samples, n_classes)
 
@@ -253,7 +270,7 @@ def main(args: argparse.Namespace):
         plt.ylabel("True Positive Rate")
         plt.title("ROC Curve for classes with Area Under the Curve (AOC)")
         plt.legend()
-        plt.show()
+        plt.savefig('ROCK!!!.png')
 
 
 
