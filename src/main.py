@@ -167,6 +167,7 @@ def main(args: argparse.Namespace):
 
     elif args.task == 'results_vis':
         
+        sns.set()
         args.epochs = 1
         model, train_set, val_set = tasks.build_optuna_model(args)
         model.load_weights('out/model_weights/xception_best_model_20230129-145950.h5')
@@ -183,15 +184,19 @@ def main(args: argparse.Namespace):
         predicted_labels = []
         labels_one_hot = []
         string_labels = sorted(list(classes.keys()), key = lambda x: classes[x])
+        y_score_single = []
+        y_labels_argmax = []
 
         for n, (images, label_batch) in enumerate(val_set):
 
             for image, label in zip(images, label_batch):
                 prediction = model(image[None, :, :, :])[0]
                 labels_one_hot.append(label)
+                y_labels_argmax.append(np.argmax(label))
                 test_labels.append(string_labels[np.argmax(label)])
                 y_score.append(prediction)
                 predicted_labels.append(string_labels[np.argmax(prediction)])
+                y_score_single.append(prediction[np.argmax(label)])
 
 
             if n == test_steps:
@@ -199,10 +204,16 @@ def main(args: argparse.Namespace):
         #print(len(y_score), len(predicted_labels), len(test_labels))
         y_score = np.array(y_score)
         import scikitplot as skplt
-        skplt.metrics.plot_roc(test_labels, y_score)
+        skplt.metrics.plot_roc(y_labels_argmax, y_score)
 
         plt.savefig('ROCK!!!.png')
         plt.clf()
+
+        skplt.metrics.plot_precision_recall(y_labels_argmax, y_score)
+        plt.savefig('UNA PR!!!.png')
+        plt.clf()
+
+        
 
 
         # Prepare data for confusion matrix
