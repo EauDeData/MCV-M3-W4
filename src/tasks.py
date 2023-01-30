@@ -69,7 +69,7 @@ def fit_model(model, train_set, val_set, config: Dict[str, Any], log2wandb: bool
 
     if save_weights:
         logging.info('Saving the model into ' + save_weights_path + ' \n')
-        model.save_weights(save_weights_path)
+        model.save(save_weights_path)
         logging.info('Done!\n')
 
     # Return accuracy and loss of the model on the test set

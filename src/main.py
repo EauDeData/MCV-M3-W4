@@ -41,9 +41,9 @@ def __parse_args() -> argparse.Namespace:
     parser.add_argument('--train_augmentations_file', type=str, default=None, #"configs/augmentations/train_augmentations.json",
                         help='Path to the train augmentations file.')
     # Training args
-    parser.add_argument('--batch_size', type=int, default=16,
+    parser.add_argument('--batch_size', type=int, default=8,
                         help='Batch size.')
-    parser.add_argument('--epochs', type=int, default=10,
+    parser.add_argument('--epochs', type=int, default=5,
                         help='Number of epochs.')
     # parser.add_argument('--steps_per_epoch', type=int, default=-1,
     #                     help='Number of steps per epoch. If -1, it will be set to the number of samples in the dataset divided by the batch size.')
