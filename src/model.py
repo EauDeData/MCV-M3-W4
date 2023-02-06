@@ -2,7 +2,7 @@ import keras
 import os
 
 from keras.applications import Xception
-from keras.layers import Dense, GlobalAveragePooling2D, Conv2D, MaxPooling2D, Flatten, BatchNormalization
+from keras.layers import Dense, GlobalAveragePooling2D, Conv2D, MaxPooling2D, Flatten, BatchNormalization, Convolution2D, Activation, Dropout, Concatenate
 from keras.models import Model
 
 
@@ -125,7 +125,7 @@ def get_baseline_cnn(channels, kernel_sizes, image_size, weights=None):
 
 
 def get_squeezenet_cnn(image_size: int, activation: str, initialization: str, dropout: float, batch_norm: bool):
-    input_img = Input(shape=(image_size, image_size, 3))
+    input_img = keras.Input(shape=(image_size, image_size, 3))
     conv1 = Convolution2D(
         96, (7, 7), activation=activation, kernel_initializer=initialization,  # glorot_uniform,
         strides=(2, 2), padding='same', name='conv1',
@@ -334,11 +334,11 @@ def get_squeezenet_cnn(image_size: int, activation: str, initialization: str, dr
 
     fire9_dropout = Dropout(0.5, name='fire9_dropout')(merge9)
     conv10 = Convolution2D(
-        nb_classes, (1, 1), activation=None, kernel_initializer=initialization,
+        8, (1, 1), activation=None, kernel_initializer=initialization,
         padding='valid', name='conv10',
         )(fire9_dropout)
 
-    global_avgpool10 = GlobalAveragePooling2D(data_format='channels_first')(conv10)
+    global_avgpool10 = GlobalAveragePooling2D()(conv10)
     softmax = Activation("softmax", name='softmax')(global_avgpool10)
 
     return Model(inputs=input_img, outputs=softmax)

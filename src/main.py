@@ -8,7 +8,7 @@ import seaborn as sns
 
 import dataset as dtst
 import tasks
-from model import build_xception_model, build_xception_model_half_frozen, build_model_tricks, get_baseline_cnn
+from model import build_xception_model, build_xception_model_half_frozen, build_model_tricks, get_baseline_cnn, get_squeezenet_cnn
 
 
 def __parse_args() -> argparse.Namespace:
@@ -263,7 +263,7 @@ def main(args: argparse.Namespace):
         student = get_squeezenet_cnn(
             image_size=args.image_size[0],
             activation='relu',
-            initialization'glorot_uniform',
+            initialization='glorot_uniform',
             dropout=True,
             batch_norm=True,
         )
