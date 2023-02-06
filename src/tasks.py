@@ -365,18 +365,18 @@ def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt
 def prune_model(model, train_set, val_set, config):
     print("Number of parameters in the original model: ", model.count_params())
     # end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
-    # pruning_params = {
-    #     'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
-    #                                                             final_sparsity=0.90,
-    #                                                             begin_step=0,
-    #                                                             end_step=end_step)
-    # }
+    pruning_params = {
+        'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
+                                                                final_sparsity=0.50,
+                                                                begin_step=0,
+                                                                end_step=end_step)
+    }
 
     # Helper function uses `prune_low_magnitude` to make only the 
     # Convolutional layers train with pruning.
     def apply_pruning_to_dense(layer):
         if "conv" in layer.name:
-            return tfmot.sparsity.keras.prune_low_magnitude(layer)
+            return tfmot.sparsity.keras.prune_low_magnitude(layer, **pruning_params)
         return layer
 
     # Use `tf.keras.models.clone_model` to apply `apply_pruning_to_dense` 
