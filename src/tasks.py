@@ -412,6 +412,12 @@ def prune_model(model, train_set, val_set, config):
 
     print("Number of parameters in pruned model: ", model_for_pruning.count_params())
 
+    # Evaluate model
+    model_for_export.compile(
+        loss='categorical_crossentropy',
+        optimizer=optimizer,
+        metrics=['accuracy']
+    )
     eval_model(model_for_export, val_set)
 
     return model_for_export
