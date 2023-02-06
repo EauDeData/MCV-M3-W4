@@ -212,8 +212,6 @@ def main(args: argparse.Namespace):
         plt.savefig('UNA PR!!!.png')
         plt.clf()
 
-        
-
 
         # Prepare data for confusion matrix
         axs_dict = classes
@@ -268,8 +266,18 @@ def main(args: argparse.Namespace):
         test_dir = args.dataset_dir + '/test'
         prep = keras.applications.xception.preprocess_input  # TODO: triar preprocessat. Si agafem el d'una altra arquitectura preentrenada, caldrà fer un preprocessat diferent
 
-        train_datagen = dtst.load_dataset(train_dir, preprocess_function = prep)
-        validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep)
+        train_datagen = dtst.load_dataset(
+            train_dir,
+            target_size=args.image_size[0],
+            batch_size=args.batch_size,
+            preprocess_function=prep
+        )
+        validation_datagen = dtst.load_dataset(
+            test_dir,
+            target_size=args.image_size[0],
+            batch_size=args.batch_size,
+            preprocess_function=prep
+        )
 
         ### TRAIN LOOP ###
         tasks.train_properly_implemented(student, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)
