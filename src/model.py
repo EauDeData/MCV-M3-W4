@@ -2,7 +2,7 @@ import keras
 import os
 
 from keras.applications import Xception
-from keras.layers import Dense, GlobalAveragePooling2D, Conv2D, MaxPooling2D, Flatten
+from keras.layers import Dense, GlobalAveragePooling2D, Conv2D, MaxPooling2D, Flatten, BatchNormalization
 from keras.models import Model
 
 
@@ -122,3 +122,223 @@ def get_baseline_cnn(channels, kernel_sizes, image_size, weights=None):
     )
 
     return model
+
+
+def get_squeezenet_cnn(image_size: int, activation: str, initialization: str, dropout: float, batch_norm: bool):
+    input_img = Input(shape=(image_size, image_size, 3))
+    conv1 = Convolution2D(
+        96, (7, 7), activation=activation, kernel_initializer=initialization,  # glorot_uniform,
+        strides=(2, 2), padding='same', name='conv1',
+    )(input_img)
+    maxpool1 = MaxPooling2D(
+        pool_size=(3, 3), strides=(2, 2), name='maxpool1',
+    )(conv1)
+
+    fire2_squeeze = Convolution2D(
+        16, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire2_squeeze',
+        )(maxpool1)
+    fire2_expand1 = Convolution2D(
+        64, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire2_expand1',
+        )(fire2_squeeze)
+    if batch_norm:
+        fire2_expand1 = BatchNormalization()(fire2_expand1)
+    fire2_expand1 = Activation(activation)(fire2_expand1)
+    if dropout:
+        fire2_expand1 = Dropout(0.1,)(fire2_expand1)
+    fire2_expand2 = Convolution2D(
+        64, (3, 3), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire2_expand2',
+        )(fire2_squeeze)
+    if batch_norm:
+        fire2_expand2 = BatchNormalization()(fire2_expand2)
+    fire2_expand2 = Activation(activation)(fire2_expand2)
+    if dropout:
+        fire2_expand2 = Dropout(0.1,)(fire2_expand2)
+    merge2 = Concatenate(axis=1)([fire2_expand1, fire2_expand2])
+
+    fire3_squeeze = Convolution2D(
+        16, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire3_squeeze',
+        )(merge2)
+    fire3_expand1 = Convolution2D(
+        64, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire3_expand1',
+        )(fire3_squeeze)
+    if batch_norm:
+        fire3_expand1 = BatchNormalization()(fire3_expand1)
+    fire3_expand1 = Activation(activation)(fire3_expand1)
+    if dropout:
+        fire3_expand1 = Dropout(0.1,)(fire3_expand1)
+    fire3_expand2 = Convolution2D(
+        64, (3, 3), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire3_expand2',
+        )(fire3_squeeze)
+    if batch_norm:
+        fire3_expand2 = BatchNormalization()(fire3_expand2)
+    fire3_expand2 = Activation(activation)(fire3_expand2)
+    if dropout:
+        fire3_expand2 = Dropout(0.1,)(fire3_expand2)
+    merge3 = Concatenate(axis=1)([fire3_expand1, fire3_expand2])
+
+    fire4_squeeze = Convolution2D(
+        32, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire4_squeeze',
+        )(merge3)
+    fire4_expand1 = Convolution2D(
+        128, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire4_expand1',
+        )(fire4_squeeze)
+    if batch_norm:
+        fire4_expand1 = BatchNormalization()(fire4_expand1)
+    fire4_expand1 = Activation(activation)(fire4_expand1)
+    if dropout:
+        fire4_expand1 = Dropout(0.1,)(fire4_expand1)
+    fire4_expand2 = Convolution2D(
+        128, (3, 3), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire4_expand2',
+        )(fire4_squeeze)
+    if batch_norm:
+        fire4_expand2 = BatchNormalization()(fire4_expand2)
+    fire4_expand2 = Activation(activation)(fire4_expand2)
+    if dropout:
+        fire4_expand2 = Dropout(0.1,)(fire4_expand2)
+    merge4 = Concatenate(axis=1)([fire4_expand1, fire4_expand2])
+    maxpool4 = MaxPooling2D(
+        pool_size=(3, 3), strides=(2, 2), name='maxpool4',
+        )(merge4)
+
+    fire5_squeeze = Convolution2D(
+        32, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire5_squeeze',
+        )(maxpool4)
+    fire5_expand1 = Convolution2D(
+        128, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire5_expand1',
+        )(fire5_squeeze)
+    if batch_norm:
+        fire5_expand1 = BatchNormalization()(fire5_expand1)
+    fire5_expand1 = Activation(activation)(fire5_expand1)
+    if dropout:
+        fire5_expand1 = Dropout(0.1,)(fire5_expand1)
+    fire5_expand2 = Convolution2D(
+        128, (3, 3), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire5_expand2',
+        )(fire5_squeeze)
+    if batch_norm:
+        fire5_expand2 = BatchNormalization()(fire5_expand2)
+    fire5_expand2 = Activation(activation)(fire5_expand2)
+    if dropout:
+        fire5_expand2 = Dropout(0.1,)(fire5_expand2)
+    merge5 = Concatenate(axis=1)([fire5_expand1, fire5_expand2])
+
+    fire6_squeeze = Convolution2D(
+        48, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire6_squeeze',
+        )(merge5)
+    fire6_expand1 = Convolution2D(
+        192, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire6_expand1',
+        )(fire6_squeeze)
+    if batch_norm:
+        fire6_expand1 = BatchNormalization()(fire6_expand1)
+    fire6_expand1 = Activation(activation)(fire6_expand1)
+    if dropout:
+        fire6_expand1 = Dropout(0.1,)(fire6_expand1)
+    fire6_expand2 = Convolution2D(
+        192, (3, 3), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire6_expand2',
+        )(fire6_squeeze)
+    if batch_norm:
+        fire6_expand2 = BatchNormalization()(fire6_expand2)
+    fire6_expand2 = Activation(activation)(fire6_expand2)
+    if dropout:
+        fire6_expand2 = Dropout(0.1,)(fire6_expand2)
+    merge6 = Concatenate(axis=1)([fire6_expand1, fire6_expand2])
+
+    fire7_squeeze = Convolution2D(
+        48, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire7_squeeze',
+        )(merge6)
+    fire7_expand1 = Convolution2D(
+        192, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire7_expand1',
+        )(fire7_squeeze)
+    if batch_norm:
+        fire7_expand1 = BatchNormalization()(fire7_expand1)
+    fire7_expand1 = Activation(activation)(fire7_expand1)
+    if dropout:
+        fire7_expand1 = Dropout(0.1,)(fire7_expand1)
+    fire7_expand2 = Convolution2D(
+        192, (3, 3), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire7_expand2',
+        )(fire7_squeeze)
+    if batch_norm:
+        fire7_expand2 = BatchNormalization()(fire7_expand2)
+    fire7_expand2 = Activation(activation)(fire7_expand2)
+    if dropout:
+        fire7_expand2 = Dropout(0.1,)(fire7_expand2)
+    merge7 = Concatenate(axis=1)([fire7_expand1, fire7_expand2])
+
+    fire8_squeeze = Convolution2D(
+        64, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire8_squeeze',
+        )(merge7)
+    fire8_expand1 = Convolution2D(
+        256, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire8_expand1',
+        )(fire8_squeeze)
+    if batch_norm:
+        fire8_expand1 = BatchNormalization()(fire8_expand1)
+    fire8_expand1 = Activation(activation)(fire8_expand1)
+    if dropout:
+        fire8_expand1 = Dropout(0.1,)(fire8_expand1)
+    fire8_expand2 = Convolution2D(
+        256, (3, 3), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire8_expand2',
+        )(fire8_squeeze)
+    if batch_norm:
+        fire8_expand2 = BatchNormalization()(fire8_expand2)
+    fire8_expand2 = Activation(activation)(fire8_expand2)
+    if dropout:
+        fire8_expand2 = Dropout(0.1,)(fire8_expand2)
+    merge8 = Concatenate(axis=1)([fire8_expand1, fire8_expand2])
+
+    maxpool8 = MaxPooling2D(
+        pool_size=(3, 3), strides=(2, 2), name='maxpool8',
+        )(merge8)
+    fire9_squeeze = Convolution2D(
+        64, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire9_squeeze',
+        )(maxpool8)
+    fire9_expand1 = Convolution2D(
+        256, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire9_expand1',
+        )(fire9_squeeze)
+    if batch_norm:
+        fire9_expand1 = BatchNormalization()(fire9_expand1)
+    fire9_expand1 = Activation(activation)(fire9_expand1)
+    if dropout:
+        fire9_expand1 = Dropout(0.1,)(fire9_expand1)
+    fire9_expand2 = Convolution2D(
+        256, (3, 3), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire9_expand2',
+        )(fire9_squeeze)
+    if batch_norm:
+        fire9_expand2 = BatchNormalization()(fire9_expand2)
+    fire9_expand2 = Activation(activation)(fire9_expand2)
+    if dropout:
+        fire9_expand2 = Dropout(0.1,)(fire9_expand2)
+    merge9 = Concatenate(axis=1)([fire9_expand1, fire9_expand2])
+
+    fire9_dropout = Dropout(0.5, name='fire9_dropout')(merge9)
+    conv10 = Convolution2D(
+        nb_classes, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='valid', name='conv10',
+        )(fire9_dropout)
+
+    global_avgpool10 = GlobalAveragePooling2D(data_format='channels_first')(conv10)
+    softmax = Activation("softmax", name='softmax')(global_avgpool10)
+
+    return Model(inputs=input_img, outputs=softmax)

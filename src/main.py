@@ -259,7 +259,14 @@ def main(args: argparse.Namespace):
         # TODO: implement distillation
         channels = [16, 32, 64, 64]
         kernel_sizes = [3, 3, 3, 3]
-        student = get_baseline_cnn(channels, kernel_sizes, args.image_size[0])
+        # student = get_baseline_cnn(channels, kernel_sizes, args.image_size[0])
+        student = get_squeezenet_cnn(
+            image_size=args.image_size[0],
+            activation='relu',
+            initialization'glorot_uniform',
+            dropout=True,
+            batch_norm=True,
+        )
         # teacher = model_totxo()
         ### DATA ###
         train_dir = args.dataset_dir + '/train'
