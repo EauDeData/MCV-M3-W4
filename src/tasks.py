@@ -410,7 +410,7 @@ def prune_model(model, train_set, val_set, config):
     # Strip model
     model_for_export = tfmot.sparsity.keras.strip_pruning(model_for_pruning)
 
-    print("Number of parameters in pruned model: ", model_for_pruning.count_params())
+    print("Number of parameters in pruned model: ", model_for_export.count_params())
 
     # Evaluate model
     model_for_export.compile(
