@@ -93,10 +93,11 @@ def get_intermediate_layer_model(model, layer_index: int = -1) -> Model:
 
 def get_baseline_cnn(channels, kernel_sizes, image_size, weights=None):
 
+    input_layer = keras.Input(shape=(image_size, image_size, 3))
     model = keras.Sequential()
 
     model.add(
-        Conv2D(channels[0], (kernel_sizes[0], kernel_sizes[0]), activation='relu', input_shape=(image_size, image_size, 3))
+        Conv2D(channels[0], (kernel_sizes[0], kernel_sizes[0]), activation='relu')#, input_shape=(image_size, image_size, 3))
     )
     for ch, ks in zip(channels[1:-1], kernel_sizes[1:-1]):
         model.add(Conv2D(ch, (ks, ks), activation='relu'))
@@ -114,5 +115,10 @@ def get_baseline_cnn(channels, kernel_sizes, image_size, weights=None):
 
     os.makedirs("out", exist_ok=True)
     keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
+
+    model = Model(
+        inputs=input_layer,
+        outputs=model.layers[-1].output,
+    )
 
     return model
