@@ -8,7 +8,7 @@ import seaborn as sns
 
 import dataset as dtst
 import tasks
-from model import build_xception_model, build_xception_model_half_frozen, build_model_tricks
+from model import build_xception_model, build_xception_model_half_frozen, build_model_tricks, get_baseline_cnn
 
 
 def __parse_args() -> argparse.Namespace:
@@ -257,7 +257,7 @@ def main(args: argparse.Namespace):
         fig.suptitle('Confusion matrix for test set predictions')
         plt.savefig('MATRIX.png')
 
-    elif args.task == "distil":
+    elif args.task == "distill":
         # TODO: implement distillation
         channels = [16, 32, 64, 64]
         kernel_sizes = [3, 3, 3, 3]
