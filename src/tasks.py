@@ -363,14 +363,28 @@ def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt
 
 
 def prune_model(model, train_set, val_set, config):
-    end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
-    pruning_params = {
-        'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
-                                                                final_sparsity=0.90,
-                                                                begin_step=0,
-                                                                end_step=end_step)
-    }
-    model_for_pruning = tfmot.sparsity.keras.prune_low_magnitude(model, **pruning_params)
+    print("Number of parameters in the original model: ", model.count_params())
+    # end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
+    # pruning_params = {
+    #     'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
+    #                                                             final_sparsity=0.90,
+    #                                                             begin_step=0,
+    #                                                             end_step=end_step)
+    # }
+
+    # Helper function uses `prune_low_magnitude` to make only the 
+    # Convolutional layers train with pruning.
+    def apply_pruning_to_dense(layer):
+        if "conv" in layer.name:
+            return tfmot.sparsity.keras.prune_low_magnitude(layer)
+        return layer
+
+    # Use `tf.keras.models.clone_model` to apply `apply_pruning_to_dense` 
+    # to the layers of the model.
+    model_for_pruning = tf.keras.models.clone_model(
+        model,
+        clone_function=apply_pruning_to_dense,
+    )
 
     # Compile model
     optimizer = utils.get_optimizer(config['optimizer']['type'],
@@ -393,6 +407,8 @@ def prune_model(model, train_set, val_set, config):
         ]
     )
 
+    print("Number of parameters in pruned model: ", model_for_pruning.count_params())
+
     # Strip model
     model_for_export = tfmot.sparsity.keras.strip_pruning(model_for_pruning)
 
@@ -407,14 +423,8 @@ def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     # Load weights
     model.load_weights(args.model_weights_file)
 
-    print("Model summary before pruning:")
-    print(model.summary())
-
     # Prune model
     model = prune_model(model, train_set, val_set, config)
-
-    print("Model summary after pruning:")
-    print(model.summary())
 
     # Save model
     os.makedirs("out/models", exist_ok=True)
