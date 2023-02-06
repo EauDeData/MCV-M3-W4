@@ -19,12 +19,12 @@ def __parse_args() -> argparse.Namespace:
         argparse.Namespace: Arguments.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--task', type=str, default='optuna_train',
+    parser.add_argument('--task', type=str, default='prune',
                         help='Task to perform: [default_train, evaluate, cross_validation, optuna_search, optuna_train]')
     # Model args
     # parser.add_argument('--model_config_file', type=str, default='model_configs/arquitecture1/encoder_3_layers_64_units.json',
     #                     help='Path to the model configuration file.')
-    parser.add_argument('--model_weights_file', type=str, default=None,  # 'week3/model_weights/default.h5',
+    parser.add_argument('--model_weights_file', type=str, default="out/model_weights/xception_best_model_small.h5",  # 'week3/model_weights/default.h5',
                         help='Path to the model weights file.')
     # parser.add_argument('--intermediate_layer', type=str, default=None,
     #                     help='Name of the intermediate layer to extract features from.')
@@ -254,6 +254,9 @@ def main(args: argparse.Namespace):
 
         fig.suptitle('Confusion matrix for test set predictions')
         plt.savefig('MATRIX.png')
+
+    elif args.task == "prune":
+        tasks.prune_and_train_optuna_model(args)
 
     elif args.task == "distill":
         # TODO: implement distillation

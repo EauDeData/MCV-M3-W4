@@ -7,6 +7,8 @@ import optuna
 import datetime
 import keras
 import pickle
+import tensorflow as tf
+import tensorflow_model_optimization as tfmot
 from wandb.keras import WandbMetricsLogger
 from typing import Dict, Any, List
 from keras.models import Model
@@ -351,87 +353,71 @@ def build_optuna_model(args, report_file: str = "report_best_model.txt"):
         freeze_from=config['model']['freeze_from'],
         freeze_percent=config['model']['freeze_percent'],
     )
-    return model, train_set, val_set
+    return model, train_set, val_set, config
 
 
 def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt"):
-    # Load dataset
-    dataset_dir = args.dataset_dir
-    train_dir = dataset_dir + '/train'
-    test_dir = dataset_dir + '/test'
-
-    # Load report with best params
-    with open(report_file, 'r') as f:
-        lines = f.readlines()
-
-    # Get best params
-    best_params = {}
-    for line in lines[3:]:
-        key, value = line.split(': ')
-        best_params[key] = value.strip()
-
-    augmentations = {
-        'rotation_range': float(best_params['rotation_range']),
-        'width_shift_range': float(best_params['width_shift_range']),
-        'height_shift_range': float(best_params['height_shift_range']),
-        'shear_range': float(best_params['shear_range']),
-        'zoom_range': float(best_params['zoom_range']),
-        'horizontal_flip': best_params['horizontal_flip'] == 'True',
-        'vertical_flip': best_params['vertical_flip'] == 'True',
-        'brightness_range': (float(best_params['brightness_range_min']), float(best_params['brightness_range_max'])),
-        'fill_mode': best_params['fill_mode'],
-        'cval': float(best_params['cval']),
-    }
-
-    config = {
-        "experiment_name": f'xception_best_model_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}',
-        "model": {
-            "name": "Xception",
-            "dropout": best_params['dropout'] == 'True',
-            "batch_norm": best_params['batch_norm'] == 'True',
-            "regularizer": best_params['regularizer'] == 'True',
-            "freeze_from": float(best_params['freeze_from']),
-            "freeze_percent": float(best_params['freeze_percent']),
-        },
-        "optimizer": {
-            'type': best_params['optimizer'],
-            'learning_rate': float(best_params['learning_rate']),
-            'momentum': float(best_params['momentum']),
-        },
-        "epochs": args.epochs,
-        "dataset_path": args.dataset_dir,
-    }
-
-    # Preprocess function
-    prep = keras.applications.xception.preprocess_input
-
-    # Load dataset
-    train_set = dtst.load_dataset(
-        train_dir,
-        target_size=args.image_size[0],
-        batch_size=args.batch_size,
-        preprocess_function=prep,
-        augmentations=augmentations
-    )
-    val_set = dtst.load_dataset(
-        test_dir,
-        target_size=args.image_size[0],
-        batch_size=args.batch_size,
-        preprocess_function=prep
-    )
-
-    # Build model
-    model = build_model_tricks(
-        dropout=config['model']['dropout'],
-        batch_norm=config['model']['batch_norm'],
-        regularizer=config['model']['regularizer'],
-        freeze_from=config['model']['freeze_from'],
-        freeze_percent=config['model']['freeze_percent'],
-    )
-
-    # Train model
+    model, train_set, val_set, config = build_optuna_model(args, report_file)
     fit_model(model, train_set, val_set, config, log2wandb=True, save_weights=True)
-    return model, train_set, val_set
+
+
+def prune_model(model, train_set, val_set, config):
+    # Prune model
+    pruning_params = {
+        'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
+                                                                final_sparsity=0.90,
+                                                                begin_step=0,
+                                                                end_step=1000)
+    }
+    model_for_pruning = tfmot.sparsity.keras.prune_low_magnitude(model, **pruning_params)
+
+    # Compile model
+    optimizer = utils.get_optimizer(config['optimizer']['type'],
+                                config['optimizer']['learning_rate'],
+                                config['optimizer']['momentum']),
+    model_for_pruning.compile(
+        loss='categorical_crossentropy',
+        optimizer=optimizer,
+        metrics=['accuracy']
+    )
+
+    # Prune model
+    model_for_pruning.fit(
+        train_set,
+        epochs=config['epochs'],
+        validation_data=val_set,
+        callbacks=[
+            tfmot.sparsity.keras.UpdatePruningStep(),
+            tfmot.sparsity.keras.PruningSummaries(log_dir=config['experiment_name'])
+        ]
+    )
+
+    # Strip model
+    model_for_export = tfmot.sparsity.keras.strip_pruning(model_for_pruning)
+
+    eval_model(model_for_export, val_set)
+
+    return model_for_export
+
+
+def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt"):
+    model, train_set, val_set, config = build_optuna_model(args, report_file)
+
+    # Load weights
+    model.load_weights(args.model_weights_file)
+
+    print("Model summary before pruning:")
+    print(model.summary())
+
+    # Prune model
+    model = prune_model(model, train_set, val_set, config)
+
+    print("Model summary after pruning:")
+    print(model.summary())
+
+    # Save model
+    os.makedirs("out/models", exist_ok=True)
+    model.save(f"out/models/{config['experiment_name']}_pruned.h5")
 
 
 def visualize_layer(model, sample, layer_index=-2, aggr='Max'):
