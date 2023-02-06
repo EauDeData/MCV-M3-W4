@@ -374,7 +374,7 @@ def prune_model(model, train_set, val_set, config):
     # Compile model
     optimizer = utils.get_optimizer(config['optimizer']['type'],
                                 config['optimizer']['learning_rate'],
-                                config['optimizer']['momentum']),
+                                config['optimizer']['momentum'])
     model_for_pruning.compile(
         loss='categorical_crossentropy',
         optimizer=optimizer,
