@@ -364,7 +364,7 @@ def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt
 
 def prune_model(model, train_set, val_set, config):
     print("Number of parameters in the original model: ", model.count_params())
-    # end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
+    end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
         'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
                                                                 final_sparsity=0.50,
