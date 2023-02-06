@@ -324,6 +324,7 @@ def build_optuna_model(args, report_file: str = "report_best_model.txt"):
             'momentum': float(best_params['momentum']),
         },
         "epochs": args.epochs,
+        "batch_size": args.batch_size,
         "dataset_path": args.dataset_dir,
     }
 
@@ -362,12 +363,12 @@ def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt
 
 
 def prune_model(model, train_set, val_set, config):
-    # Prune model
+    end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
         'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
                                                                 final_sparsity=0.90,
                                                                 begin_step=0,
-                                                                end_step=1000)
+                                                                end_step=end_step)
     }
     model_for_pruning = tfmot.sparsity.keras.prune_low_magnitude(model, **pruning_params)
 
