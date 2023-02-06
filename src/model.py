@@ -23,11 +23,12 @@ def build_xception_model(weights = None, freeze_layers: bool = True):
 
     if weights is not None:
         model.load_weights(weights)
-    
+
     os.makedirs("out", exist_ok=True)
     keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
 
     return model
+
 
 def build_xception_model_half_frozen(freeze_until: bool = 'last', freeze_from = 0):
     base_model = Xception(weights='imagenet', include_top=False)
@@ -76,6 +77,7 @@ def build_model_tricks(dropout: bool = False, regularizer: bool = False, batch_n
 
     return model
 
+
 def get_intermediate_layer_model(model, layer_index: int = -1) -> Model:
     """
     Returns the intermediate layers model from a given model. 
@@ -87,3 +89,30 @@ def get_intermediate_layer_model(model, layer_index: int = -1) -> Model:
     intermediate_layer_model = Model(inputs=model.input,
                                         outputs=model.layers[layer_index].output)
     return intermediate_layer_model
+
+
+def get_baseline_cnn(channels, kernel_sizes, image_size, weights=None):
+
+    model = models.Sequential()
+
+    model.add(
+        layers.Conv2D(channels[0], (kernel_sizes[0], kernel_sizes[0]), activation='relu', input_shape=(image_size, image_size, 3))
+    )
+    for ch, ks in zip(channels[1:-1], kernel_sizes[1:-1]):
+        model.add(layers.Conv2D(ch, (ks, ks), activation='relu'))
+        model.add(layers.MaxPooling2D((2, 2)))
+    model.add(
+        layers.Conv2D(channels[-1], (kernel_sizes[-1], kernel_sizes[-1]), activation='relu')
+    )
+
+    model.add(layers.Flatten())
+    model.add(Dense(64, activation='relu'))
+    model.add(Dense(8, activation='softmax')(x))
+
+    if weights is not None:
+        model.load_weights(weights)
+
+    os.makedirs("out", exist_ok=True)
+    keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
+
+    return model

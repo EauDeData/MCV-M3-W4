@@ -99,7 +99,7 @@ def main(args: argparse.Namespace):
         # Train the model for each fold and save the metrics, then compute the mean and std
         loss = []
         accuracy = []
-        
+
         for i, dataset_dir in enumerate(dataset_dirs):
             print(f'Cross validation {i + 1}/{len(dataset_dirs)}')
             experiment_name = f'xception_fold{i+1}_{timestamp}'
@@ -112,9 +112,8 @@ def main(args: argparse.Namespace):
 
         print(f'Loss: {loss.mean()} +- {loss.std()}')
         print(f'Accuracy: {accuracy.mean()} +- {accuracy.std()}')
-    
-    elif args.task == 'train_frozen':
 
+    elif args.task == 'train_frozen':
 
         ### DATA ###
         train_dir = args.dataset_dir + '/train'
@@ -258,11 +257,25 @@ def main(args: argparse.Namespace):
         fig.suptitle('Confusion matrix for test set predictions')
         plt.savefig('MATRIX.png')
 
+    elif args.task == "distil":
+        # TODO: implement distillation
+        channels = [16, 32, 64, 64]
+        kernel_sizes = [3, 3, 3, 3]
+        student = get_baseline_cnn(channels, kernel_sizes, args.image_size[0])
+        # teacher = model_totxo()
+        ### DATA ###
+        train_dir = args.dataset_dir + '/train'
+        test_dir = args.dataset_dir + '/test'
+        prep = keras.applications.xception.preprocess_input  # TODO: triar preprocessat. Si agafem el d'una altra arquitectura preentrenada, caldrà fer un preprocessat diferent
+
+        train_datagen = dtst.load_dataset(train_dir, preprocess_function = prep)
+        validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep)
+
+        ### TRAIN LOOP ###
+        tasks.train_properly_implemented(student, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)
+        # tasks.distillation(teacher, student, ...)  # TODO: implement distillation
 
 
 if __name__ == '__main__':
     args = __parse_args()
     main(args)
-    
-
-        
