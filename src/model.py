@@ -118,7 +118,7 @@ def get_baseline_cnn(channels, kernel_sizes, image_size, weights=None):
 
     model = Model(
         inputs=input_layer,
-        outputs=model.layers[-1].output,
+        outputs=model(input_layer),
     )
 
     return model
