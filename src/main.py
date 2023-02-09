@@ -10,7 +10,7 @@ import tensorflow as tf
 import dataset as dtst
 import tasks
 from model import build_xception_model, build_xception_model_half_frozen, build_model_tricks, get_baseline_cnn, get_squeezenet_cnn
-
+import utils
 
 def __parse_args() -> argparse.Namespace:
     """
@@ -281,11 +281,17 @@ def main(args: argparse.Namespace):
         test_dir = args.dataset_dir + '/test'
         prep = keras.applications.xception.preprocess_input
 
+        if args.train_augmentations_file is not None:
+            train_augmentations = utils.load_config(args.train_augmentations_file)
+        else:
+            train_augmentations = {}
+
         train_datagen = dtst.load_dataset(
             train_dir,
             target_size=args.image_size[0],
             batch_size=args.batch_size,
-            preprocess_function=prep
+            preprocess_function=prep,
+            augmentations=train_augmentations,
         )
         validation_datagen = dtst.load_dataset(
             test_dir,
@@ -294,7 +300,6 @@ def main(args: argparse.Namespace):
             preprocess_function=prep
         )
 
-        ### TRAIN LOOP ###
         tasks.distillation(
             args,
             train_datagen,

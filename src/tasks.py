@@ -429,7 +429,7 @@ def prune_model(model, train_set, val_set, config, log2wandb=True):
         validation_data=val_set,
         callbacks=[
             tfmot.sparsity.keras.UpdatePruningStep(),
-            # tfmot.sparsity.keras.PruningSummaries(log_dir=config['experiment_name'])
+            tfmot.sparsity.keras.PruningSummaries(log_dir=config['experiment_name'])
         ] + callbacks
     )
 
@@ -511,6 +511,7 @@ def prune_and_train_any_model(args, dataset_dir):
             'learning_rate': args.learning_rate,
         },
         "epochs": args.epochs,
+        "batch_size": args.batch_size,
         "dataset_path": args.dataset_dir,
     }
 
@@ -565,7 +566,7 @@ def distillation(
         args.momentum,
     )
 
-    channels = [16, 32, 64, 64, 128]
+    channels = [32, 32, 64, 128]
     kernel_sizes = [3, 3, 3, 3]
     student = get_baseline_cnn(channels, kernel_sizes, args.image_size[0])
     # student = get_squeezenet_cnn(
@@ -578,16 +579,29 @@ def distillation(
     teacher_weights_file = './model_files/xception_best_model_smallData.h5'
     trained_teacher = build_xception_model(teacher_weights_file)
 
+    studentName = 'student_'  ########
+    save_weights_path = save_weights_dir + studentName + '.h5'
+
+    config: Dict[str, Any] = {
+        "experiment_name": studentName + f'_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}',
+        "optimizer": {
+            'type': args.optimizer,
+            'learning_rate': args.learning_rate,
+        },
+        "batch_size": args.batch_size,
+        "epochs": args.epochs,
+    }
+
     temperature = 10
     alpha = 0.1
 
     student, teacher = distilator.train_student(
+        config,
         student,
         trained_teacher,
         temperature,
         optimizer,
         train_set, test_set,
-        epochs = args.epochs,
         metrics = [keras.metrics.SparseCategoricalAccuracy()],
         student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         distill_loss = keras.losses.KLDivergence(),
@@ -597,24 +611,12 @@ def distillation(
     save_weights_dir = './out/student/'
     os.makedirs(save_weights_dir, exist_ok=True)
 
-    studentName = 'student - '
-    save_weights_path = save_weights_dir + studentName + '.h5'
-
     logging.info('Done!\n')
 
     if save_weights:
         logging.info('Saving the student into ' + save_weights_path + ' \n')
         student.save_weights(save_weights_path)
         logging.info('Done!\n')
-
-    config: Dict[str, Any] = {
-        "experiment_name": studentName + f'_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}',
-        "optimizer": {
-            'type': args.optimizer,
-            'learning_rate': args.learning_rate,
-        },
-        "epochs": 10,
-    }
 
     if args.momentum is not None:
         config['optimizer']['momentum'] = args.momentum

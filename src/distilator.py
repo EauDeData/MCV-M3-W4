@@ -1,3 +1,6 @@
+import wandb
+from wandb.keras import WandbMetricsLogger
+
 import keras
 import tensorflow as tf
 
@@ -85,34 +88,42 @@ class Distiller(keras.Model):
         results = {m.name: m.result() for m in self.metrics}
         results.update({"student_loss": student_loss})
         return results
-    
-    #def call(self, *args):
-    #    pass
 
 
 def train_student(
+    config,
     student,
     trained_teacher,
     temperature,
     optimizer,
     train_set,
     test_set,
-    epochs,
     metrics = [keras.metrics.SparseCategoricalAccuracy()],
     student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=False),#True),
     distill_loss = keras.losses.KLDivergence(),
     alpha = 0.1
 ):
 
+    wandb.init(
+        config=config, project='m3_week4',
+        name=config["experiment_name"],
+    )
+    callbacks = [WandbMetricsLogger()]
+
     trainer = Distiller(student, trained_teacher, temperature)
     trainer.compile(
         optimizer=optimizer,
         metrics=metrics,
         student_loss_fn=student_loss,
-        distillation_loss_fn = distill_loss,
-        alpha=alpha
+        distillation_loss_fn=distill_loss,
+        alpha=alpha,
     )
-    trainer.fit(train_set, epochs=epochs)
+    trainer.fit(
+        train_set,
+        epochs=config["epochs"],
+        validation_data=test_set,
+        callbacks=callbacks,
+    )
     trainer.evaluate(test_set)
 
     return student, trainer
