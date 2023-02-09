@@ -85,6 +85,9 @@ class Distiller(keras.Model):
         results = {m.name: m.result() for m in self.metrics}
         results.update({"student_loss": student_loss})
         return results
+    
+    #def call(self, *args):
+    #    pass
 
 
 def train_student(

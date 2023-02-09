@@ -114,12 +114,14 @@ def get_baseline_cnn(channels, kernel_sizes, image_size, weights=None):
         model.load_weights(weights)
 
     os.makedirs("out", exist_ok=True)
-    keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
 
     model = Model(
         inputs=input_layer,
         outputs=model(input_layer),
     )
+    keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
+
+
 
     return model
 

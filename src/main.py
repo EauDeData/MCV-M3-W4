@@ -19,7 +19,7 @@ def __parse_args() -> argparse.Namespace:
         argparse.Namespace: Arguments.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--task', type=str, default='prune',
+    parser.add_argument('--task', type=str, default='distill',
                         help='Task to perform: [default_train, evaluate, cross_validation, optuna_search, optuna_train]')
     # Model args
     # parser.add_argument('--model_config_file', type=str, default='model_configs/arquitecture1/encoder_3_layers_64_units.json',
