@@ -255,8 +255,11 @@ def main(args: argparse.Namespace):
         fig.suptitle('Confusion matrix for test set predictions')
         plt.savefig('MATRIX.png')
 
-    elif args.task == "prune":
+    elif args.task == "prune_optuna":
         tasks.prune_and_train_optuna_model(args)
+
+    elif args.task == "prune_any":
+        tasks.prune_and_train_any_model(args, args.dataset_dir)
 
     elif args.task == "distill":
         ### DATA ###

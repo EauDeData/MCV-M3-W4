@@ -455,6 +455,61 @@ def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     model.save(f"out/models/{config['experiment_name']}_pruned.h5")
 
 
+def prune_and_train_any_model(args, dataset_dir):
+    # Load dataset
+    train_dir = dataset_dir + '/train'
+    test_dir = dataset_dir + '/test'
+
+    prep = keras.applications.xception.preprocess_input
+
+    if args.train_augmentations_file is not None:
+        train_augmentations = utils.load_config(args.train_augmentations_file)
+    else:
+        train_augmentations = {}
+
+    train_datagen = dtst.load_dataset(
+        train_dir, 
+        target_size=args.image_size[0],
+        batch_size=args.batch_size,
+        preprocess_function=prep, 
+        augmentations=train_augmentations
+        )
+    validation_datagen = dtst.load_dataset(
+        test_dir,
+        target_size=args.image_size[0],
+        batch_size=args.batch_size,
+        preprocess_function=prep
+        )
+
+    # Load model
+    model = tf.keras.models.load_model(args.model_weights_file)
+
+    experiment_name = f'xception_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}'
+
+    config: Dict[str, Any] = {
+        "experiment_name": experiment_name,
+        "model": {
+            "name": "Xception",
+        },
+        "optimizer": {
+            'type': args.optimizer,
+            'learning_rate': args.learning_rate,
+        },
+        "epochs": args.epochs,
+        "dataset_path": args.dataset_dir,
+    }
+
+    if args.momentum is not None:
+        config['optimizer']['momentum'] = args.momentum
+
+    # Prune model
+    model = prune_model(model, train_datagen, validation_datagen, config)
+
+    # Save model
+    os.makedirs("out/models", exist_ok=True)
+    model.save(f"out/models/{config['experiment_name']}_pruned.h5")
+
+
 def visualize_layer(model, sample, layer_index=-2, aggr='Max'):
     feature_model = get_intermediate_layer_model(model, layer_index)
 
