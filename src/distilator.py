@@ -99,7 +99,7 @@ def train_student(
     train_set,
     test_set,
     metrics = [keras.metrics.SparseCategoricalAccuracy()],
-    student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=False),#True),
+    student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True),
     distill_loss = keras.losses.KLDivergence(),
     alpha = 0.1
 ):
