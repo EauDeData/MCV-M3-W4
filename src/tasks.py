@@ -580,7 +580,7 @@ def distillation(
     trained_teacher = build_xception_model(teacher_weights_file)
 
     studentName = 'student_'  ########
-    save_weights_path = save_weights_dir + studentName + '.h5'
+    save_weights_path = 'model_files/' + studentName + '.h5'
 
     config: Dict[str, Any] = {
         "experiment_name": studentName + f'_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}',
