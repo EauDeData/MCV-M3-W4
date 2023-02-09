@@ -381,7 +381,10 @@ def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt
 
 
 def prune_model(model, train_set, val_set, config):
-    print("Number of parameters in the original model: ", model.count_params())
+    print(
+        f"{config['experiment_name']} - Number of parameters in the original model: ",
+        model.count_params()
+    )
     end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
         'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
@@ -390,14 +393,14 @@ def prune_model(model, train_set, val_set, config):
                                                                 end_step=end_step)
     }
 
-    # Helper function uses `prune_low_magnitude` to make only the 
+    # Helper function uses `prune_low_magnitude` to make only the
     # Convolutional layers train with pruning.
     def apply_pruning_to_dense(layer):
         if "conv" in layer.name:
             return tfmot.sparsity.keras.prune_low_magnitude(layer, **pruning_params)
         return layer
 
-    # Use `tf.keras.models.clone_model` to apply `apply_pruning_to_dense` 
+    # Use `tf.keras.models.clone_model` to apply `apply_pruning_to_dense`
     # to the layers of the model.
     model_for_pruning = tf.keras.models.clone_model(
         model,
@@ -468,18 +471,18 @@ def prune_and_train_any_model(args, dataset_dir):
         train_augmentations = {}
 
     train_datagen = dtst.load_dataset(
-        train_dir, 
+        train_dir,
         target_size=args.image_size[0],
         batch_size=args.batch_size,
-        preprocess_function=prep, 
+        preprocess_function=prep,
         augmentations=train_augmentations
-        )
+    )
     validation_datagen = dtst.load_dataset(
         test_dir,
         target_size=args.image_size[0],
         batch_size=args.batch_size,
         preprocess_function=prep
-        )
+    )
 
     # Load model
     model = tf.keras.models.load_model(args.model_weights_file)
@@ -554,8 +557,8 @@ def distillation(
     #     dropout=True,
     #     batch_norm=True,
     # )
-    model_weights_file = 'out/model_weights/xceptionSmallData.h5'
-    trained_teacher = build_xception_model(model_weights_file)
+    teacher_weights_file = './model_files/xception_best_model_smallData.h5'
+    trained_teacher = build_xception_model(teacher_weights_file)
 
     temperature = 10
     alpha = 0.1
@@ -586,9 +589,31 @@ def distillation(
         student.save_weights(save_weights_path)
         logging.info('Done!\n')
 
+    config: Dict[str, Any] = {
+        "experiment_name": studentName + f'_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}',
+        "optimizer": {
+            'type': args.optimizer,
+            'learning_rate': args.learning_rate,
+        },
+        "epochs": 10,
+    }
+
+    if args.momentum is not None:
+        config['optimizer']['momentum'] = args.momentum
+
+    # Save model
+    os.makedirs("out/models", exist_ok=True)
+    model.save(f"out/models/{config['experiment_name']}_nonPruned.h5")
+
+    # Prune model
+    model = prune_model(model, train_set, test_set, config)
+
+    # Save model
+    os.makedirs("out/models", exist_ok=True)
+    model.save(f"out/models/{config['experiment_name']}_pruned.h5")
+
     # Evaluate the student
     # ROC, AUC, Confusion Matrix, Activation Maps...
-
 
 
 if __name__ == "__main__":
