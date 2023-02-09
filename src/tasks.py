@@ -14,8 +14,10 @@ from typing import Dict, Any, List
 from keras.models import Model
 
 import utils
-from model import build_xception_model, get_intermediate_layer_model, build_model_tricks
+from model import build_xception_model, build_model_tricks, get_baseline_cnn, get_intermediate_layer_model
+
 import dataset as dtst
+import distilator
 
 
 def eval_model(model, test_generator) -> List[float]:
@@ -103,7 +105,7 @@ def train_properly_implemented(model, train_set, val_set, optimizer_type, learni
             callbacks=[
                 WandbMetricsLogger(),
                 ])
-    
+
 def train_tricks_train(model, train_set, val_set, optimizer_type, learning_rate, epochs, reduce = 0.1, momentum=None):
     print('EPOCHES', epochs)
     model_name = 'xception'
@@ -456,6 +458,53 @@ def visualize_layer(model, sample, layer_index=-2, aggr='Max'):
 
     plt.imshow(layer_output)
     plt.savefig('feature_maps.png')
+
+
+def distillation(
+    config,
+    train_set,
+    test_set,
+):
+
+    optimizer = utils.get_optimizer(
+        config['optimizer']['type'],
+        config['optimizer']['learning_rate'],
+        config['optimizer']['momentum']
+    )
+
+    channels = [16, 32, 64, 64, 128]
+    kernel_sizes = [3, 3, 3, 3]
+    student = get_baseline_cnn(channels, kernel_sizes, config.image_size[0])
+    # student = get_squeezenet_cnn(
+    #     image_size=args.image_size[0],
+    #     activation='relu',
+    #     initialization='glorot_uniform',
+    #     dropout=True,
+    #     batch_norm=True,
+    # )
+
+    model_weights_file = './study_best_model.pkl'
+    trained_teacher = build_xception_model(model_weights_file)
+
+    temperature = 10
+    alpha = 0.1
+
+    student, teacher = distilator.train_student(
+        student,
+        trained_teacher,
+        temperature,
+        optimizer,
+        train_set, test_set,
+        epochs = config['epochs'],
+        metrics = [keras.metrics.SparseCategoricalAccuracy()],
+        student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        distill_loss = keras.losses.KLDivergence(),
+        alpha = alpha,
+    )
+
+    # Evaluate the student
+    # ROC, AUC, Confusion Matrix, Activation Maps...
+
 
 
 if __name__ == "__main__":

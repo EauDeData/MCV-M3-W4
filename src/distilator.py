@@ -2,8 +2,8 @@ import keras
 import tensorflow as tf
 
 class Distiller(keras.Model):
-    
-    # FROM OFFICIAL TTORIAL: https://keras.io/examples/vision/knowledge_distillation/
+
+    # FROM OFFICIAL TUTORIAL: https://keras.io/examples/vision/knowledge_distillation/
     # AND PAPER: https://arxiv.org/abs/1503.02531
 
     def __init__(self, student, teacher, temperature):
@@ -12,7 +12,6 @@ class Distiller(keras.Model):
         self.student = student
         self.temperature = temperature
 
-    
     def compile(self,
         optimizer,
         metrics,
@@ -25,7 +24,6 @@ class Distiller(keras.Model):
         self.distillation_loss_fn = distillation_loss_fn
         self.alpha = alpha
 
-    
     def train_step(self, data):
         # Unpack data
         x, y = data
@@ -89,7 +87,19 @@ class Distiller(keras.Model):
         return results
 
 
-def train_student(student, trained_teacher, temperature, optimizer, x_train, y_train, x_test, y_test, epoches, metrics = [keras.metrics.SparseCategoricalAccuracy()], student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True), distill_loss = keras.losses.KLDivergence(), alpha = 0.1):
+def train_student(
+    student,
+    trained_teacher,
+    temperature,
+    optimizer,
+    train_set,
+    test_set,
+    epoches,
+    metrics = [keras.metrics.SparseCategoricalAccuracy()],
+    student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=False),#True),
+    distill_loss = keras.losses.KLDivergence(),
+    alpha = 0.1
+):
 
     trainer = Distiller(student, trained_teacher, temperature)
     trainer.compile(
@@ -99,10 +109,7 @@ def train_student(student, trained_teacher, temperature, optimizer, x_train, y_t
         distillation_loss_fn = distill_loss,
         alpha=alpha
     )
-    trainer.fit(x_train, y_train, epochs=epoches)
-    trainer.evaluate(x_test, y_test)
+    trainer.fit(train_set, epochs=epoches)
+    trainer.evaluate(test_set)
 
     return student, trainer
-
-
-
