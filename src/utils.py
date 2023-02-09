@@ -29,3 +29,19 @@ def load_config(config_path: str):
         config = json.load(f)
 
     return config
+
+
+def print_sparsity(model):
+    total_w = 0
+    total_0 = 0
+
+    for i, w in enumerate(model.get_weights()):
+        print(
+            "{} -- Total:{}, Zeros: {:.2f}%".format(
+                model.weights[i].name, w.size, np.sum(w == 0) / w.size * 100
+            )
+        )
+        total_w += w.size
+        total_0 += np.sum(w == 0)
+
+    print(f"\nTotal weights: {total_w}. Pruned weights: {total_w - total_0}. Total sparsity: {total_0 / total_w * 100}%\n\n")
