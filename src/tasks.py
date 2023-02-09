@@ -79,7 +79,10 @@ def fit_model(model, train_set, val_set, config: Dict[str, Any], log2wandb: bool
     # Return accuracy and loss of the model on the test set
     return eval_model(model, val_set)
 
-def train_properly_implemented(model, train_set, val_set, optimizer_type, learning_rate, epochs, momentum=None):
+
+def train_properly_implemented(
+    model, train_set, val_set, optimizer_type, learning_rate, epochs, momentum=None, save_weights=True
+):
     print('EPOCHES', epochs)
     model_name = 'xception'
     optimizer = utils.get_optimizer(optimizer_type, learning_rate, momentum)
@@ -105,6 +108,19 @@ def train_properly_implemented(model, train_set, val_set, optimizer_type, learni
             callbacks=[
                 WandbMetricsLogger(),
                 ])
+
+    save_weights_dir = './out/model_weights/'
+    os.makedirs(save_weights_dir, exist_ok=True)
+
+    save_weights_path = save_weights_dir + 'xceptionSmallData' + '.h5'
+
+    logging.info('Done!\n')
+
+    if save_weights:
+        logging.info('Saving the model into ' + save_weights_path + ' \n')
+        model.save_weights(save_weights_path)
+        logging.info('Done!\n')
+
 
 def train_tricks_train(model, train_set, val_set, optimizer_type, learning_rate, epochs, reduce = 0.1, momentum=None):
     print('EPOCHES', epochs)
@@ -464,6 +480,7 @@ def distillation(
     args,
     train_set,
     test_set,
+    save_weights=True,
 ):
 
     optimizer = utils.get_optimizer(
@@ -482,8 +499,7 @@ def distillation(
     #     dropout=True,
     #     batch_norm=True,
     # )
-
-    model_weights_file = './study_best_model.pkl'
+    model_weights_file = 'out/model_weights/xceptionSmallData.h5'
     trained_teacher = build_xception_model(model_weights_file)
 
     temperature = 10
@@ -501,6 +517,19 @@ def distillation(
         distill_loss = keras.losses.KLDivergence(),
         alpha = alpha,
     )
+
+    save_weights_dir = './out/student/'
+    os.makedirs(save_weights_dir, exist_ok=True)
+
+    studentName = 'student - '
+    save_weights_path = save_weights_dir + studentName + '.h5'
+
+    logging.info('Done!\n')
+
+    if save_weights:
+        logging.info('Saving the student into ' + save_weights_path + ' \n')
+        student.save_weights(save_weights_path)
+        logging.info('Done!\n')
 
     # Evaluate the student
     # ROC, AUC, Confusion Matrix, Activation Maps...

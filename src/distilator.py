@@ -94,7 +94,7 @@ def train_student(
     optimizer,
     train_set,
     test_set,
-    epoches,
+    epochs,
     metrics = [keras.metrics.SparseCategoricalAccuracy()],
     student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=False),#True),
     distill_loss = keras.losses.KLDivergence(),
@@ -109,7 +109,7 @@ def train_student(
         distillation_loss_fn = distill_loss,
         alpha=alpha
     )
-    trainer.fit(train_set, epochs=epoches)
+    trainer.fit(train_set, epochs=epochs)
     trainer.evaluate(test_set)
 
     return student, trainer

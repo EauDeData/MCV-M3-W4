@@ -120,11 +120,11 @@ def main(args: argparse.Namespace):
         test_dir = args.dataset_dir + '/test'
         prep = keras.applications.xception.preprocess_input
 
-        train_datagen = dtst.load_dataset(train_dir, preprocess_function = prep)  
-        validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep) 
+        train_datagen = dtst.load_dataset(train_dir, preprocess_function = prep)
+        validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep)
 
         ### MODEL ###
-        model = build_xception_model_half_frozen(freeze_from=20, freeze_until=60)
+        model = build_xception_model_half_frozen(freeze_from=0, freeze_until=60)
 
         ### TRAIN LOOP ###
         tasks.train_properly_implemented(model, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)
