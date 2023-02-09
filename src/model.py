@@ -25,7 +25,7 @@ def build_xception_model(weights = None, freeze_layers: bool = True):
         model.load_weights(weights)
 
     os.makedirs("out", exist_ok=True)
-    keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
+    # keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
 
     return model
 
@@ -119,7 +119,7 @@ def get_baseline_cnn(channels, kernel_sizes, image_size, weights=None):
         inputs=input_layer,
         outputs=model(input_layer),
     )
-    keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
+    # keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
 
 
 
