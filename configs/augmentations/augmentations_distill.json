@@ -7,6 +7,6 @@
     "fill_mode": "wrap",
     "horizontal_flip": true,
     "vertical_flip": false,
-    "brightness_range_min": 0.29895239505853,
+    "brightness_range": [0.29895239505853, 0.8712073905090372],
     "cval": 0.8190885237118093
 }
