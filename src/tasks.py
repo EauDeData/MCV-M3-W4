@@ -498,8 +498,7 @@ def distillation(
     #     dropout=True,
     #     batch_norm=True,
     # )
-
-    model_weights_file = './study_best_model.pkl'
+    model_weights_file = 'out/model_weights/xceptionSmallData.h5'
     trained_teacher = build_xception_model(model_weights_file)
 
     temperature = 10

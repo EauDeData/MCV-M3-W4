@@ -124,7 +124,7 @@ def main(args: argparse.Namespace):
         validation_datagen = dtst.load_dataset(test_dir, preprocess_function = prep)
 
         ### MODEL ###
-        model = build_xception_model_half_frozen(freeze_from=70, freeze_until=100)
+        model = build_xception_model_half_frozen(freeze_from=0, freeze_until=60)
 
         ### TRAIN LOOP ###
         tasks.train_properly_implemented(model, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)
