@@ -385,7 +385,7 @@ def prune_model(model, train_set, val_set, config):
     end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
         'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
-                                                                final_sparsity=0.90,
+                                                                final_sparsity=0.80,
                                                                 begin_step=0,
                                                                 end_step=end_step)
     }
@@ -458,7 +458,7 @@ def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt
         total_w += w.size
         total_0 += np.sum(w == 0)
 
-    print(f"\nTotal sparsity: {total_0 / total_w * 100}%\n\n")
+    print(f"\nTotal weights: {total_w}. 0 weights: {total_0}. Total sparsity: {total_0 / total_w * 100}%\n\n")
 
     # Prune model
     model = prune_model(model, train_set, val_set, config)
@@ -476,7 +476,7 @@ def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt
         total_w += w.size
         total_0 += np.sum(w == 0)
 
-    print(f"\nTotal sparsity: {total_0 / total_w * 100}%\n\n")
+    print(f"\nTotal weights: {total_w}. 0 weights: {total_0}. Total sparsity: {total_0 / total_w * 100}%\n\n")
 
     # Save model
     os.makedirs("out/models", exist_ok=True)
