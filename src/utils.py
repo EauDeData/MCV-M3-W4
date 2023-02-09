@@ -1,4 +1,5 @@
 import json
+import numpy as np
 from typing import Optional
 from keras.optimizers import SGD, Adam, RMSprop, Adagrad, Adadelta, Adamax, Nadam
 

@@ -385,15 +385,16 @@ def prune_model(model, train_set, val_set, config):
     end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
         'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
-                                                                final_sparsity=0.80,
+                                                                final_sparsity=0.90,
                                                                 begin_step=0,
                                                                 end_step=end_step)
     }
 
     # Helper function uses `prune_low_magnitude` to make only the
     # Convolutional layers train with pruning.
+    # Don't prune the first 4 blocks of the model
     def apply_pruning_to_dense(layer):
-        if "conv" in layer.name:
+        if "conv" in layer.name and "block" in layer.name and int(layer.name.split('_')[0][-1]) > 4:
             return tfmot.sparsity.keras.prune_low_magnitude(layer, **pruning_params)
         return layer
 
