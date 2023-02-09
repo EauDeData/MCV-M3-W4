@@ -5,6 +5,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import tensorflow as tf
 
 import dataset as dtst
 import tasks
@@ -19,7 +20,7 @@ def __parse_args() -> argparse.Namespace:
         argparse.Namespace: Arguments.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--task', type=str, default='distill',
+    parser.add_argument('--task', type=str, default='evaluate',
                         help='Task to perform: [default_train, evaluate, cross_validation, optuna_search, optuna_train]')
     # Model args
     # parser.add_argument('--model_config_file', type=str, default='model_configs/arquitecture1/encoder_3_layers_64_units.json',
@@ -68,11 +69,24 @@ def __parse_args() -> argparse.Namespace:
 
 
 def main(args: argparse.Namespace):
+    # Set the seed for reproducibility
+    np.random.seed(42)
+    tf.keras.utils.set_random_seed(42)
+
     if args.task == 'default_train':
         tasks.default_train(args, args.dataset_dir, log2wandb=args.log2wandb)
 
     elif args.task == 'evaluate':
-        model = build_xception_model(args.model_weights_file)
+        try:
+            model = keras.models.load_model(args.model_weights_file)
+        except:
+            model = build_xception_model(args.model_weights_file)
+
+        model.compile(
+            optimizer="rmsprop",
+            loss=keras.losses.categorical_crossentropy,
+            metrics=['accuracy']
+        )
 
         prep = keras.applications.xception.preprocess_input
         validation_datagen = dtst.load_dataset(

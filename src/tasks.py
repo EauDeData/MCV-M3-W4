@@ -381,14 +381,11 @@ def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt
 
 
 def prune_model(model, train_set, val_set, config):
-    print(
-        f"{config['experiment_name']} - Number of parameters in the original model: ",
-        model.count_params()
-    )
+    # Define pruning schedule
     end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
         'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
-                                                                final_sparsity=0.50,
+                                                                final_sparsity=0.90,
                                                                 begin_step=0,
                                                                 end_step=end_step)
     }
@@ -431,8 +428,6 @@ def prune_model(model, train_set, val_set, config):
     # Strip model
     model_for_export = tfmot.sparsity.keras.strip_pruning(model_for_pruning)
 
-    print("Number of parameters in pruned model: ", model_for_export.count_params())
-
     # Evaluate model
     model_for_export.compile(
         loss='categorical_crossentropy',
@@ -450,8 +445,22 @@ def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     # Load weights
     model.load_weights(args.model_weights_file)
 
+    for i, w in enumerate(model.get_weights()):
+        print(
+            "\n{} -- Total:{}, Zeros (before pruning): {:.2f}%\n".format(
+                model.weights[i].name, w.size, np.sum(w == 0) / w.size * 100
+            )
+        )
+
     # Prune model
     model = prune_model(model, train_set, val_set, config)
+
+    for i, w in enumerate(model.get_weights()):
+        print(
+            "\n{} -- Total:{}, Zeros (after pruning): {:.2f}%\n".format(
+                model.weights[i].name, w.size, np.sum(w == 0) / w.size * 100
+            )
+        )
 
     # Save model
     os.makedirs("out/models", exist_ok=True)
