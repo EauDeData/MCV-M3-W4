@@ -480,6 +480,7 @@ def distillation(
     args,
     train_set,
     test_set,
+    save_weights=True,
 ):
 
     optimizer = utils.get_optimizer(
@@ -516,6 +517,19 @@ def distillation(
         distill_loss = keras.losses.KLDivergence(),
         alpha = alpha,
     )
+
+    save_weights_dir = './out/student/'
+    os.makedirs(save_weights_dir, exist_ok=True)
+
+    studentName = 'student - '
+    save_weights_path = save_weights_dir + studentName + '.h5'
+
+    logging.info('Done!\n')
+
+    if save_weights:
+        logging.info('Saving the student into ' + save_weights_path + ' \n')
+        student.save_weights(save_weights_path)
+        logging.info('Done!\n')
 
     # Evaluate the student
     # ROC, AUC, Confusion Matrix, Activation Maps...
