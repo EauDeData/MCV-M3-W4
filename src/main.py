@@ -259,22 +259,10 @@ def main(args: argparse.Namespace):
         tasks.prune_and_train_optuna_model(args)
 
     elif args.task == "distill":
-        # TODO: implement distillation
-        channels = [16, 32, 64, 64]
-        kernel_sizes = [3, 3, 3, 3]
-        # student = get_baseline_cnn(channels, kernel_sizes, args.image_size[0])
-        student = get_squeezenet_cnn(
-            image_size=args.image_size[0],
-            activation='relu',
-            initialization='glorot_uniform',
-            dropout=True,
-            batch_norm=True,
-        )
-        # teacher = model_totxo()
         ### DATA ###
         train_dir = args.dataset_dir + '/train'
         test_dir = args.dataset_dir + '/test'
-        prep = keras.applications.xception.preprocess_input  # TODO: triar preprocessat. Si agafem el d'una altra arquitectura preentrenada, caldrà fer un preprocessat diferent
+        prep = keras.applications.xception.preprocess_input
 
         train_datagen = dtst.load_dataset(
             train_dir,
@@ -290,8 +278,11 @@ def main(args: argparse.Namespace):
         )
 
         ### TRAIN LOOP ###
-        tasks.train_properly_implemented(student, train_datagen, validation_datagen, args.optimizer, args.learning_rate, args.epochs, args.momentum)
-        # tasks.distillation(teacher, student, ...)  # TODO: implement distillation
+        tasks.distillation(
+            args,
+            train_datagen,
+            validation_datagen,
+        )
 
 
 if __name__ == '__main__':
