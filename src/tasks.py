@@ -461,20 +461,20 @@ def visualize_layer(model, sample, layer_index=-2, aggr='Max'):
 
 
 def distillation(
-    config,
+    args,
     train_set,
     test_set,
 ):
 
     optimizer = utils.get_optimizer(
-        config['optimizer']['type'],
-        config['optimizer']['learning_rate'],
-        config['optimizer']['momentum']
+        args.optimizer,
+        args.learning_rate,
+        args.momentum,
     )
 
     channels = [16, 32, 64, 64, 128]
     kernel_sizes = [3, 3, 3, 3]
-    student = get_baseline_cnn(channels, kernel_sizes, config.image_size[0])
+    student = get_baseline_cnn(channels, kernel_sizes, args.image_size[0])
     # student = get_squeezenet_cnn(
     #     image_size=args.image_size[0],
     #     activation='relu',
@@ -495,7 +495,7 @@ def distillation(
         temperature,
         optimizer,
         train_set, test_set,
-        epochs = config['epochs'],
+        epochs = args.epochs,
         metrics = [keras.metrics.SparseCategoricalAccuracy()],
         student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         distill_loss = keras.losses.KLDivergence(),
