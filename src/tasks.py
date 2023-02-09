@@ -380,12 +380,12 @@ def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     fit_model(model, train_set, val_set, config, log2wandb=True, save_weights=True)
 
 
-def prune_model(model, train_set, val_set, config):
+def prune_model(model, train_set, val_set, config, log2wandb=True):
     # Define pruning schedule
     end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
-        'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.50,
-                                                                final_sparsity=0.90,
+        'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.0,
+                                                                final_sparsity=0.80,
                                                                 begin_step=0,
                                                                 end_step=end_step)
     }
@@ -394,7 +394,7 @@ def prune_model(model, train_set, val_set, config):
     # Convolutional layers train with pruning.
     # Don't prune the first 4 blocks of the model
     def apply_pruning_to_dense(layer):
-        if "conv" in layer.name and "block" in layer.name and int(layer.name.split('_')[0][-1]) > 4:
+        if "conv" in layer.name and ("block" not in layer.name or int(layer.name.split('_')[0][-1]) > 1):
             return tfmot.sparsity.keras.prune_low_magnitude(layer, **pruning_params)
         return layer
 
@@ -415,6 +415,13 @@ def prune_model(model, train_set, val_set, config):
         metrics=['accuracy']
     )
 
+    if log2wandb:
+        wandb.init(config=config, project='m3_week5',
+                name="prune_"+config["experiment_name"])
+        callbacks = [WandbMetricsLogger()]
+    else:
+        callbacks = []
+
     # Prune model
     model_for_pruning.fit(
         train_set,
@@ -422,9 +429,12 @@ def prune_model(model, train_set, val_set, config):
         validation_data=val_set,
         callbacks=[
             tfmot.sparsity.keras.UpdatePruningStep(),
-            tfmot.sparsity.keras.PruningSummaries(log_dir=config['experiment_name'])
-        ]
+            # tfmot.sparsity.keras.PruningSummaries(log_dir=config['experiment_name'])
+        ] + callbacks
     )
+
+    if log2wandb:
+        wandb.finish()
 
     # Strip model
     model_for_export = tfmot.sparsity.keras.strip_pruning(model_for_pruning)
