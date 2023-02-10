@@ -14,7 +14,7 @@ from typing import Dict, Any, List
 from keras.models import Model
 
 import utils
-from model import build_xception_model, build_model_tricks, get_baseline_cnn, get_intermediate_layer_model
+from model import build_xception_model, build_model_tricks, get_baseline_cnn, get_intermediate_layer_model, get_squeezenet_cnn
 
 import dataset as dtst
 import distilator
@@ -566,7 +566,7 @@ def distillation(
         args.momentum,
     )
 
-    channels = [32, 32, 64, 128]
+    channels = [32, 64, 128, 128]
     kernel_sizes = [3, 3, 3, 3]
     student = get_baseline_cnn(channels, kernel_sizes, args.image_size[0])
     # student = get_squeezenet_cnn(
@@ -576,12 +576,16 @@ def distillation(
     #     dropout=True,
     #     batch_norm=True,
     # )
-    teacher_weights_file = './model_files/xception_best_model_smallData.h5'
-    trained_teacher = build_xception_model(teacher_weights_file)
+   
+    temperature = 10
+    alpha = 0.1  # 1, 0.1
 
-    studentName = 'student_'  ########
+    studentName = 'student_base_Distill'  ########
     save_weights_path = 'model_files/' + studentName + '.h5'
 
+    teacher_weights_file = './model_files/xception_best_model_smallData.h5'
+    trained_teacher = build_xception_model(teacher_weights_file)
+ 
     config: Dict[str, Any] = {
         "experiment_name": studentName + f'_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}',
         "optimizer": {
@@ -591,9 +595,6 @@ def distillation(
         "batch_size": args.batch_size,
         "epochs": args.epochs,
     }
-
-    temperature = 10
-    alpha = 0.1
 
     student, teacher = distilator.train_student(
         config,
@@ -623,14 +624,20 @@ def distillation(
 
     # Save model
     os.makedirs("out/models", exist_ok=True)
-    model.save(f"out/models/{config['experiment_name']}_nonPruned.h5")
+    student.save(f"out/models/{config['experiment_name']}_nonPruned.h5")
 
     # Prune model
-    model = prune_model(model, train_set, test_set, config)
+    print("\n\n------ Student weights before pruning ------")
+    utils.print_sparsity(student)
+    config['epochs'] = 15
+    student = prune_model(student, train_set, test_set, config)
+
+    print("\n\n------ Student weights after pruning ------")
+    utils.print_sparsity(student)
 
     # Save model
     os.makedirs("out/models", exist_ok=True)
-    model.save(f"out/models/{config['experiment_name']}_pruned.h5")
+    student.save(f"out/models/{config['experiment_name']}_pruned.h5")
 
     # Evaluate the student
     # ROC, AUC, Confusion Matrix, Activation Maps...
