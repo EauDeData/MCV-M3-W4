@@ -122,7 +122,64 @@ def get_baseline_cnn(channels, kernel_sizes, image_size, weights=None):
     return model
 
 
-def get_squeezenet_cnn(image_size: int, activation: str, initialization: str, dropout: float, batch_norm: bool):
+def small_squeezenet_cnn(
+    image_size: int, activation: str, initialization: str, dropout: float, batch_norm: bool,
+):
+    input_img = keras.Input(shape=(image_size, image_size, 3))
+    conv1 = Convolution2D(
+        96, (7, 7), activation=activation, kernel_initializer=initialization,  # glorot_uniform,
+        strides=(2, 2), padding='same', name='conv1',
+    )(input_img)
+    maxpool1 = MaxPooling2D(
+        pool_size=(3, 3), strides=(2, 2), name='maxpool1',
+    )(conv1)
+
+
+
+    fire2_squeeze = Convolution2D(
+        16, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire2_squeeze',
+        )(maxpool1)
+    fire2_expand1 = Convolution2D(
+        64, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire2_expand1',
+        )(fire2_squeeze)
+    if batch_norm:
+        fire2_expand1 = BatchNormalization()(fire2_expand1)
+    fire2_expand1 = Activation(activation)(fire2_expand1)
+    if dropout:
+        fire2_expand1 = Dropout(0.1,)(fire2_expand1)
+    fire2_expand2 = Convolution2D(
+        64, (3, 3), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire2_expand2',
+        )(fire2_squeeze)
+    if batch_norm:
+        fire2_expand2 = BatchNormalization()(fire2_expand2)
+    fire2_expand2 = Activation(activation)(fire2_expand2)
+    if dropout:
+        fire2_expand2 = Dropout(0.1,)(fire2_expand2)
+    merge2 = Concatenate(axis=1)([fire2_expand1, fire2_expand2])
+
+
+
+
+
+
+    fire9_dropout = Dropout(0.5, name='fire9_dropout')(merge2)
+    conv10 = Convolution2D(
+        8, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='valid', name='conv10',
+        )(fire9_dropout)
+
+    global_avgpool10 = GlobalAveragePooling2D()(conv10)
+    softmax = Activation("softmax", name='softmax')(global_avgpool10)
+
+
+
+
+def get_squeezenet_cnn(
+    image_size: int, activation: str, initialization: str, dropout: float, batch_norm: bool
+):
     input_img = keras.Input(shape=(image_size, image_size, 3))
     conv1 = Convolution2D(
         96, (7, 7), activation=activation, kernel_initializer=initialization,  # glorot_uniform,

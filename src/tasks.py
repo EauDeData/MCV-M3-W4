@@ -14,7 +14,7 @@ from typing import Dict, Any, List
 from keras.models import Model
 
 import utils
-from model import build_xception_model, build_model_tricks, get_baseline_cnn, get_intermediate_layer_model, get_squeezenet_cnn
+from model import build_xception_model, build_model_tricks, get_baseline_cnn, get_intermediate_layer_model, get_squeezenet_cnn, small_squeezenet_cnn
 
 import dataset as dtst
 import distilator
@@ -385,7 +385,7 @@ def prune_model(model, train_set, val_set, config, log2wandb=True):
     end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
         'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.0,
-                                                                final_sparsity=0.60,
+                                                                final_sparsity=0.80,
                                                                 begin_step=0,
                                                                 end_step=end_step)
     }
@@ -567,9 +567,9 @@ def distillation(
         args.momentum,
     )
 
-    channels = [32, 64, 128, 128]
-    kernel_sizes = [3, 3, 3, 3]
-    student = get_baseline_cnn(channels, kernel_sizes, args.image_size[0])
+    # channels = [32, 64, 128, 128]
+    # kernel_sizes = [3, 3, 3, 3]
+    # student = get_baseline_cnn(channels, kernel_sizes, args.image_size[0])
     # student = get_squeezenet_cnn(
     #     image_size=args.image_size[0],
     #     activation='relu',
@@ -577,8 +577,19 @@ def distillation(
     #     dropout=True,
     #     batch_norm=True,
     # )
+    activation = 'relu'
+    initialization = 'glorot_uniform'
+    dropout = 0.
+    batch_norm = False
+    student = small_squeezenet_cnn(
+        image_size=args.image_size[0],
+        activation=activation,
+        initialization=initialization,
+        dropout=dropout,
+        batch_norm=batch_norm,
+    )
     print(student.summary())
- 
+
     temperature = 10
     alpha = 1  # 1, 0.1
 
@@ -631,7 +642,7 @@ def distillation(
     # Prune model
     print("\n\n------ Student weights before pruning ------")
     utils.print_sparsity(student)
-    config['epochs'] = 30
+    config['epochs'] = 80
     student = prune_model(student, train_set, test_set, config)
 
     print("\n\n------ Student weights after pruning ------")
