@@ -160,12 +160,34 @@ def small_squeezenet_cnn(
         fire2_expand2 = Dropout(0.1,)(fire2_expand2)
     merge2 = Concatenate(axis=1)([fire2_expand1, fire2_expand2])
 
+    fire3_squeeze = Convolution2D(
+        16, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire3_squeeze',
+        )(merge2)
+    fire3_expand1 = Convolution2D(
+        64, (1, 1), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire3_expand1',
+        )(fire3_squeeze)
+    if batch_norm:
+        fire3_expand1 = BatchNormalization()(fire3_expand1)
+    fire3_expand1 = Activation(activation)(fire3_expand1)
+    if dropout:
+        fire3_expand1 = Dropout(0.1,)(fire3_expand1)
+    fire3_expand2 = Convolution2D(
+        64, (3, 3), activation=None, kernel_initializer=initialization,
+        padding='same', name='fire3_expand2',
+        )(fire3_squeeze)
+    if batch_norm:
+        fire3_expand2 = BatchNormalization()(fire3_expand2)
+    fire3_expand2 = Activation(activation)(fire3_expand2)
+    if dropout:
+        fire3_expand2 = Dropout(0.1,)(fire3_expand2)
+    merge3 = Concatenate(axis=1)([fire3_expand1, fire3_expand2])
 
 
 
 
-
-    fire9_dropout = Dropout(0.5, name='fire9_dropout')(merge2)
+    fire9_dropout = Dropout(0.5, name='fire9_dropout')(merge3)
     conv10 = Convolution2D(
         8, (1, 1), activation=None, kernel_initializer=initialization,
         padding='valid', name='conv10',
