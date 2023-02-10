@@ -2,7 +2,7 @@ import keras
 import os
 
 from keras.applications import Xception
-from keras.layers import Dense, GlobalAveragePooling2D, Conv2D, MaxPooling2D, Flatten, BatchNormalization, Convolution2D, Activation, Dropout, Concatenate
+from keras.layers import Dense, GlobalAveragePooling2D, Conv2D, MaxPooling2D, Flatten, BatchNormalization, Convolution2D, Activation, Dropout, Concatenate, Add
 from keras.models import Model
 
 
@@ -185,6 +185,12 @@ def small_squeezenet_cnn(
         fire3_expand2 = Dropout(0.1,)(fire3_expand2)
     merge3 = Concatenate(axis=1)([fire3_expand1, fire3_expand2])
 
+    merge3 = Add()([merge3, merge2])
+    # merge3 = fire3_expand1 = Convolution2D(
+    #     64, (1, 1), activation=None, kernel_initializer=initialization,
+    #     padding='same', name='fire3_residual',
+    #     )(merge2) + merge3
+
     fire4_squeeze = Convolution2D(
         32, (1, 1), activation=None, kernel_initializer=initialization,
         padding='same', name='fire4_squeeze',
@@ -235,6 +241,15 @@ def small_squeezenet_cnn(
     if dropout:
         fire5_expand2 = Dropout(0.1,)(fire5_expand2)
     merge5 = Concatenate(axis=1)([fire5_expand1, fire5_expand2])
+
+    merge5 = Add()([merge5, maxpool4])
+
+    # merge5 = Convolution2D(
+    # 128, (1, 1), activation=None, kernel_initializer=initialization,
+    # padding='same', name='fire5_residual',
+    # )(fire5_squeeze) + maxpool4
+
+
 
     # fire6_squeeze = Convolution2D(
     #     48, (1, 1), activation=None, kernel_initializer=initialization,
