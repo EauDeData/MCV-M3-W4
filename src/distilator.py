@@ -30,7 +30,7 @@ class Distiller(keras.Model):
     def train_step(self, data):
         # Unpack data
         x, y = data
-        y = tf.argmax(y)
+        y = tf.argmax(y, axis=-1)
 
         # Forward pass of teacher
         teacher_predictions = self.teacher(x, training=False)
@@ -75,7 +75,7 @@ class Distiller(keras.Model):
     def test_step(self, data):
         # Unpack the data
         x, y = data
-        y = tf.argmax(y)
+        y = tf.argmax(y, axis=-1)
 
         # Compute predictions
         y_prediction = self.student(x, training=False)
