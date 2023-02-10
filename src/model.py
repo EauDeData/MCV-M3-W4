@@ -172,9 +172,9 @@ def small_squeezenet_cnn(
         )(fire9_dropout)
 
     global_avgpool10 = GlobalAveragePooling2D()(conv10)
-    softmax = Activation("softmax", name='softmax')(global_avgpool10)
+    softmax = Dense(8, activation='softmax', name='softmax')(global_avgpool10)
 
-
+    return Model(inputs=input_img, outputs=softmax)
 
 
 def get_squeezenet_cnn(
