@@ -161,6 +161,12 @@ def small_squeezenet_cnn(
         fire2_expand2 = Dropout(0.1,)(fire2_expand2)
     merge2 = Concatenate(axis=-1)([fire2_expand1, fire2_expand2])
 
+    merge2 = Convolution2D(
+            64, (1, 1), activation=None, kernel_initializer=initialization,
+            padding='same', name='fire2_residual',
+            )(maxpool1) + merge2
+
+
     fire3_squeeze = Convolution2D(
         16, (1, 1), activation=None, kernel_initializer=initialization,
         padding='same', name='fire3_squeeze',
@@ -186,10 +192,7 @@ def small_squeezenet_cnn(
     merge3 = Concatenate(axis=-1)([fire3_expand1, fire3_expand2])
 
     merge3 = Add()([merge3, merge2])
-    # merge3 = fire3_expand1 = Convolution2D(
-    #     64, (1, 1), activation=None, kernel_initializer=initialization,
-    #     padding='same', name='fire3_residual',
-    #     )(merge2) + merge3
+
 
     fire4_squeeze = Convolution2D(
         32, (1, 1), activation=None, kernel_initializer=initialization,
@@ -214,9 +217,15 @@ def small_squeezenet_cnn(
     if dropout:
         fire4_expand2 = Dropout(0.1,)(fire4_expand2)
     merge4 = Concatenate(axis=-1)([fire4_expand1, fire4_expand2])
+    merge4 = Convolution2D(
+                64, (1, 1), activation=None, kernel_initializer=initialization,
+                padding='same', name='fire4_residual',
+            )(merge3) + merge4
+
     maxpool4 = MaxPooling2D(
         pool_size=(3, 3), strides=(2, 2), name='maxpool4',
         )(merge4)
+
 
     fire5_squeeze = Convolution2D(
         32, (1, 1), activation=None, kernel_initializer=initialization,
@@ -243,12 +252,6 @@ def small_squeezenet_cnn(
     merge5 = Concatenate(axis=-1)([fire5_expand1, fire5_expand2])
 
     merge5 = Add()([merge5, maxpool4])
-
-    # merge5 = Convolution2D(
-    # 128, (1, 1), activation=None, kernel_initializer=initialization,
-    # padding='same', name='fire5_residual',
-    # )(fire5_squeeze) + maxpool4
-
 
 
     # fire6_squeeze = Convolution2D(
