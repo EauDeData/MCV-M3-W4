@@ -162,7 +162,7 @@ def small_squeezenet_cnn(
     merge2 = Concatenate(axis=-1)([fire2_expand1, fire2_expand2])
 
     merge2 = Convolution2D(
-            64, (1, 1), activation=None, kernel_initializer=initialization,
+            128, (1, 1), activation=None, kernel_initializer=initialization,
             padding='same', name='fire2_residual',
             )(maxpool1) + merge2
 
@@ -218,7 +218,7 @@ def small_squeezenet_cnn(
         fire4_expand2 = Dropout(0.1,)(fire4_expand2)
     merge4 = Concatenate(axis=-1)([fire4_expand1, fire4_expand2])
     merge4 = Convolution2D(
-                64, (1, 1), activation=None, kernel_initializer=initialization,
+                256, (1, 1), activation=None, kernel_initializer=initialization,
                 padding='same', name='fire4_residual',
             )(merge3) + merge4
 

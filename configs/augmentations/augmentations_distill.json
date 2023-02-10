@@ -1,12 +1,7 @@
 {
     "rotation_range": 18.0,
-    "width_shift_range": 0.07482061126217918,
-    "height_shift_range": 0.3676421914571025,
-    "shear_range": 0.2921032310161601,
-    "zoom_range": 0.12330255809592217,
     "fill_mode": "wrap",
     "horizontal_flip": true,
-    "vertical_flip": false,
     "brightness_range": [0.29895239505853, 0.8712073905090372],
     "cval": 0.8190885237118093
 }

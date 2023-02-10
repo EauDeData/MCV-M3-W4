@@ -394,7 +394,7 @@ def prune_model(model, train_set, val_set, config, log2wandb=True):
     # Convolutional layers train with pruning.
     # Don't prune the first 4 blocks of the model
     def apply_pruning_to_dense(layer):
-        if "conv" in layer.name and ("block" not in layer.name or int(layer.name.split('_')[0][-1]) > 1):
+        if ("conv" in layer.name or "fire" in layer.name) and ("block" not in layer.name or int(layer.name.split('_')[0][-1]) > 1):
             return tfmot.sparsity.keras.prune_low_magnitude(layer, **pruning_params)
         return layer
 
@@ -431,7 +431,7 @@ def prune_model(model, train_set, val_set, config, log2wandb=True):
             tfmot.sparsity.keras.UpdatePruningStep(),
             tfmot.sparsity.keras.PruningSummaries(log_dir=config['experiment_name'])
         ] + callbacks,
-        validation_freq=20,
+        validation_freq=50,
     )
 
     if log2wandb:
@@ -577,10 +577,10 @@ def distillation(
     #     dropout=True,
     #     batch_norm=True,
     # )
-    activation = 'relu'
-    initialization = 'glorot_uniform'
+    activation = 'elu'
+    initialization = 'he_normal'
     dropout = 0.
-    batch_norm = False
+    batch_norm = True
     student = small_squeezenet_cnn(
         image_size=args.image_size[0],
         activation=activation,
@@ -591,9 +591,9 @@ def distillation(
     print(student.summary())
 
     temperature = 10
-    alpha = 1  # 1, 0.1
+    alpha = .1  # 1, 0.1
 
-    studentName = 'student_base_noDistill'  ########
+    studentName = 'student_base_Distill_fire4block_HeNormal_lrelu_batchnorm_residualComplex_fullData'  ########
     save_weights_path = 'model_files/' + studentName + '.h5'
 
     teacher_weights_file = './model_files/xception_best_model_smallData.h5'
