@@ -102,7 +102,7 @@ def get_baseline_cnn(channels, kernel_sizes, image_size, weights=None):
     x = Conv2D(channels[-1], (kernel_sizes[-1], kernel_sizes[-1]), activation='relu')(x)
 
     x = GlobalAveragePooling2D()(x)
-    x = Activation("softmax", name='softmax')(x)
+    x = Dense(8, activation='softmax')(x)
 
     # x = Flatten()(x)
     # x = Dense(64, activation='relu')(x)
