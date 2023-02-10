@@ -94,34 +94,27 @@ def get_intermediate_layer_model(model, layer_index: int = -1) -> Model:
 def get_baseline_cnn(channels, kernel_sizes, image_size, weights=None):
 
     input_layer = keras.Input(shape=(image_size, image_size, 3))
-    model = keras.Sequential()
 
-    model.add(
-        Conv2D(channels[0], (kernel_sizes[0], kernel_sizes[0]), activation='relu')#, input_shape=(image_size, image_size, 3))
-    )
+    x = Conv2D(channels[0], (kernel_sizes[0], kernel_sizes[0]), activation='relu')(input_layer)
     for ch, ks in zip(channels[1:-1], kernel_sizes[1:-1]):
-        model.add(Conv2D(ch, (ks, ks), activation='relu'))
-        model.add(MaxPooling2D((2, 2)))
-    model.add(
-        Conv2D(channels[-1], (kernel_sizes[-1], kernel_sizes[-1]), activation='relu')
-    )
+        x = Conv2D(ch, (ks, ks), activation='relu')(x)
+        x = MaxPooling2D((2, 2))(x)
+    x = Conv2D(channels[-1], (kernel_sizes[-1], kernel_sizes[-1]), activation='relu')(x)
 
-    model.add(Flatten())
-    model.add(Dense(64, activation='relu'))
-    model.add(Dense(8, activation='softmax'))
-
-    if weights is not None:
-        model.load_weights(weights)
-
-    os.makedirs("out", exist_ok=True)
+    x = Flatten()(x)
+    x = Dense(64, activation='relu')(x)
+    x = Dense(8, activation='softmax')(x)
 
     model = Model(
         inputs=input_layer,
-        outputs=model(input_layer),
+        outputs=x,
     )
+
+    os.makedirs("out", exist_ok=True)
+    if weights is not None:
+        model.load_weights(weights)
+
     # keras.utils.plot_model(model, to_file="out/model.png", show_shapes=False,)
-
-
 
     return model
 
