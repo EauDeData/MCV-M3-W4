@@ -385,7 +385,7 @@ def prune_model(model, train_set, val_set, config, log2wandb=True):
     end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
         'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.0,
-                                                                final_sparsity=0.80,
+                                                                final_sparsity=0.60,
                                                                 begin_step=0,
                                                                 end_step=end_step)
     }
@@ -430,7 +430,8 @@ def prune_model(model, train_set, val_set, config, log2wandb=True):
         callbacks=[
             tfmot.sparsity.keras.UpdatePruningStep(),
             tfmot.sparsity.keras.PruningSummaries(log_dir=config['experiment_name'])
-        ] + callbacks
+        ] + callbacks,
+        validation_freq=20,
     )
 
     if log2wandb:
@@ -576,11 +577,12 @@ def distillation(
     #     dropout=True,
     #     batch_norm=True,
     # )
-   
+    print(student.summary())
+ 
     temperature = 10
-    alpha = 0.1  # 1, 0.1
+    alpha = 1  # 1, 0.1
 
-    studentName = 'student_base_Distill'  ########
+    studentName = 'student_base_noDistill'  ########
     save_weights_path = 'model_files/' + studentName + '.h5'
 
     teacher_weights_file = './model_files/xception_best_model_smallData.h5'
@@ -629,7 +631,7 @@ def distillation(
     # Prune model
     print("\n\n------ Student weights before pruning ------")
     utils.print_sparsity(student)
-    config['epochs'] = 15
+    config['epochs'] = 30
     student = prune_model(student, train_set, test_set, config)
 
     print("\n\n------ Student weights after pruning ------")
