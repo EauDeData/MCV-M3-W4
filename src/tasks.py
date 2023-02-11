@@ -581,15 +581,15 @@ def distillation(
     initialization = 'he_normal'
     dropout = 0.
     batch_norm = True
-    student = small_squeezenet_cnn(
-        image_size=args.image_size[0],
-        activation=activation,
-        initialization=initialization,
-        dropout=dropout,
-        batch_norm=batch_norm,)
+    #student = small_squeezenet_cnn(
+    #    image_size=args.image_size[0],
+    #    activation=activation,
+    #    initialization=initialization,
+    #    dropout=dropout,
+    #    batch_norm=batch_norm,)
 
-    #student_knows = tf.keras.models.load_model('model_files/studentFinal.h5')
-    #student = utils.re_init(student_knows)
+    student_knows = tf.keras.models.load_model('model_files/student_base_Distill_fire4block_HeNormal_lrelu_batchnorm_residualComplex_smallData.h5')
+    student = utils.re_init(student_knows)
     print(student.summary())
 
     temperature = 10
@@ -645,17 +645,17 @@ def distillation(
     student.save(f"out/models/{config['experiment_name']}_nonPruned.h5")
 
     # Prune model
-    print("\n\n------ Student weights before pruning ------")
-    utils.print_sparsity(student)
-    config['epochs'] = 80
-    student = prune_model(student, train_set, test_set, config)
+    #print("\n\n------ Student weights before pruning ------")
+    #utils.print_sparsity(student)
+    #config['epochs'] = 80
+    #student = prune_model(student, train_set, test_set, config)
 
-    print("\n\n------ Student weights after pruning ------")
-    utils.print_sparsity(student)
+    #print("\n\n------ Student weights after pruning ------")
+    #utils.print_sparsity(student)
 
     # Save model
-    os.makedirs("out/models", exist_ok=True)
-    student.save(f"out/models/{config['experiment_name']}_pruned.h5")
+    #os.makedirs("out/models", exist_ok=True)
+    #student.save(f"out/models/{config['experiment_name']}_pruned.h5")
 
     # Evaluate the student
     # ROC, AUC, Confusion Matrix, Activation Maps...
