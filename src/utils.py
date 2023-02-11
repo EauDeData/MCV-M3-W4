@@ -58,3 +58,4 @@ def print_sparsity(model):
         total_0 += np.sum(w == 0)
 
     print(f"\nTotal weights: {total_w}. Pruned weights: {total_w - total_0}. Total sparsity: {total_0 / total_w * 100}%\n\n")
+    return total_w - total_0

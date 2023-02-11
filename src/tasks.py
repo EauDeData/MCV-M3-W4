@@ -592,8 +592,8 @@ def distillation(
     student = utils.re_init(student_knows)
     print(student.summary())
 
-    temperature = 10
-    alpha = 1  # 1, 0.1
+    temperature = 1
+    alpha = .1  # 1, 0.1
 
     studentName = 'student_base_Distill_fire4block_HeNormal_lrelu_batchnorm_residualComplex_fullData'  ########
     save_weights_path = 'model_files/' + studentName + '.h5'
@@ -627,12 +627,13 @@ def distillation(
 
     save_weights_dir = './out/student/'
     os.makedirs(save_weights_dir, exist_ok=True)
+    student.save('student_no_prune.h5')
 
     logging.info('Done!\n')
 
     if save_weights:
         logging.info('Saving the student into ' + save_weights_path + ' \n')
-        student.save_weights(save_weights_path)
+        
         logging.info('Done!\n')
 
     if args.momentum is not None:
