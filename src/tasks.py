@@ -380,7 +380,7 @@ def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     fit_model(model, train_set, val_set, config, log2wandb=True, save_weights=True)
 
 
-def prune_model(model, train_set, val_set, config, final_sparsity=0.80, log2wandb=True):
+def prune_model(model, train_set, val_set, config, final_sparsity=0.80, frequency=100, log2wandb=True):
     # Define pruning schedule
     end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
@@ -388,7 +388,7 @@ def prune_model(model, train_set, val_set, config, final_sparsity=0.80, log2wand
                                                                 final_sparsity=final_sparsity,
                                                                 begin_step=0,
                                                                 end_step=end_step,
-                                                                frequency=400)
+                                                                frequency=frequency)
     }
 
     # Helper function uses `prune_low_magnitude` to make only the
@@ -462,7 +462,7 @@ def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     utils.print_sparsity(model)
 
     # Prune model
-    model, metric = prune_model(model, train_set, val_set, config, final_sparsity=args.prune_final_sparsity)
+    model, metric = prune_model(model, train_set, val_set, config, final_sparsity=args.prune_final_sparsity, frequency=args.prune_frequency)
 
     print("\n\n------ Model weights after pruning ------")
     utils.print_sparsity(model)
@@ -529,7 +529,7 @@ def prune_and_train_any_model(args, dataset_dir):
     utils.print_sparsity(model)
 
     # Prune model
-    model, metric = prune_model(model, train_datagen, validation_datagen, config, args.prune_final_sparsity)
+    model, metric = prune_model(model, train_datagen, validation_datagen, config, args.prune_final_sparsity, frequency=args.prune_frequency)
 
     print("\n\n------ Model weights after pruning ------")
     utils.print_sparsity(model)

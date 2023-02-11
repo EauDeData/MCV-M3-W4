@@ -65,6 +65,8 @@ def __parse_args() -> argparse.Namespace:
     # Pruning args
     parser.add_argument('--prune_final_sparsity', type=float, default=0.8,
                         help='Final sparsity for the pruning.')
+    parser.add_argument('--prune_frequency', type=int, default=100,
+                        help='Pruning frequency.')
 
     args = parser.parse_args()
 
