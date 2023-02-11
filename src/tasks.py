@@ -387,7 +387,8 @@ def prune_model(model, train_set, val_set, config, final_sparsity=0.80, log2wand
         'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.0,
                                                                 final_sparsity=final_sparsity,
                                                                 begin_step=0,
-                                                                end_step=end_step)
+                                                                end_step=end_step,
+                                                                frequency=400)
     }
 
     # Helper function uses `prune_low_magnitude` to make only the
