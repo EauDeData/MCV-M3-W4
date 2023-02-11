@@ -125,7 +125,7 @@ def train_student(
         epochs=config["epochs"],
         validation_data=test_set,
         callbacks=callbacks,
-        validation_freq=50,
+        validation_freq=1,
     )
     trainer.evaluate(test_set)
 

@@ -44,7 +44,7 @@ def __parse_args() -> argparse.Namespace:
     # Training args
     parser.add_argument('--batch_size', type=int, default=8,
                         help='Batch size.')
-    parser.add_argument('--epochs', type=int, default=5,
+    parser.add_argument('--epochs', type=int, default=10,
                         help='Number of epochs.')
     # parser.add_argument('--steps_per_epoch', type=int, default=-1,
     #                     help='Number of steps per epoch. If -1, it will be set to the number of samples in the dataset divided by the batch size.')
@@ -62,6 +62,9 @@ def __parse_args() -> argparse.Namespace:
     # Optuna args
     parser.add_argument('--n_trials', type=int, default=4,
                         help='Number of trials for the optuna search.')
+    # Pruning args
+    parser.add_argument('--prune_final_sparsity', type=float, default=0.8,
+                        help='Final sparsity for the pruning.')
 
     args = parser.parse_args()
 

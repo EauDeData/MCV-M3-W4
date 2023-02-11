@@ -380,12 +380,12 @@ def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     fit_model(model, train_set, val_set, config, log2wandb=True, save_weights=True)
 
 
-def prune_model(model, train_set, val_set, config, log2wandb=True):
+def prune_model(model, train_set, val_set, config, final_sparsity=0.80, log2wandb=True):
     # Define pruning schedule
     end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
         'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.0,
-                                                                final_sparsity=0.80,
+                                                                final_sparsity=final_sparsity,
                                                                 begin_step=0,
                                                                 end_step=end_step)
     }
@@ -394,7 +394,7 @@ def prune_model(model, train_set, val_set, config, log2wandb=True):
     # Convolutional layers train with pruning.
     # Don't prune the first 4 blocks of the model
     def apply_pruning_to_dense(layer):
-        if ("conv" in layer.name or "fire" in layer.name) and ("block" not in layer.name or int(layer.name.split('_')[0][-1]) > 1):
+        if ("conv" in layer.name or "fire" in layer.name): #and ("block" not in layer.name or int(layer.name.split('_')[0][-1]) > 1):
             return tfmot.sparsity.keras.prune_low_magnitude(layer, **pruning_params)
         return layer
 
@@ -461,7 +461,7 @@ def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     utils.print_sparsity(model)
 
     # Prune model
-    model = prune_model(model, train_set, val_set, config)
+    model = prune_model(model, train_set, val_set, config, final_sparsity=args.prune_final_sparsity)
 
     print("\n\n------ Model weights after pruning ------")
     utils.print_sparsity(model)
@@ -500,12 +500,13 @@ def prune_and_train_any_model(args, dataset_dir):
     # Load model
     model = tf.keras.models.load_model(args.model_weights_file)
 
-    experiment_name = f'xception_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}'
+    # Save name with sparsity up to 2 decimals
+    experiment_name = f'student_sparsity_{args.prune_final_sparsity * 100:.2f}_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}'
 
     config: Dict[str, Any] = {
         "experiment_name": experiment_name,
         "model": {
-            "name": "Xception",
+            "name": "student",
         },
         "optimizer": {
             'type': args.optimizer,
@@ -523,7 +524,7 @@ def prune_and_train_any_model(args, dataset_dir):
     utils.print_sparsity(model)
 
     # Prune model
-    model = prune_model(model, train_datagen, validation_datagen, config)
+    model = prune_model(model, train_datagen, validation_datagen, config, args.prune_final_sparsity)
 
     print("\n\n------ Model weights after pruning ------")
     utils.print_sparsity(model)
@@ -581,19 +582,19 @@ def distillation(
     initialization = 'he_normal'
     dropout = 0.
     batch_norm = True
-    student = small_squeezenet_cnn(
-        image_size=args.image_size[0],
-        activation=activation,
-        initialization=initialization,
-        dropout=dropout,
-        batch_norm=batch_norm,)
+    #student = small_squeezenet_cnn(
+    #    image_size=args.image_size[0],
+    #    activation=activation,
+    #    initialization=initialization,
+    #    dropout=dropout,
+    #    batch_norm=batch_norm,)
 
-    #student_knows = tf.keras.models.load_model('model_files/studentFinal.h5')
-    #student = utils.re_init(student_knows)
+    student_knows = tf.keras.models.load_model('model_files/student_base_Distill_fire4block_HeNormal_lrelu_batchnorm_residualComplex_smallData.h5')
+    student = utils.re_init(student_knows)
     print(student.summary())
 
-    temperature = 10
-    alpha = 1  # 1, 0.1
+    temperature = 1
+    alpha = .1  # 1, 0.1
 
     studentName = 'student_base_Distill_fire4block_HeNormal_lrelu_batchnorm_residualComplex_fullData'  ########
     save_weights_path = 'model_files/' + studentName + '.h5'
@@ -627,12 +628,13 @@ def distillation(
 
     save_weights_dir = './out/student/'
     os.makedirs(save_weights_dir, exist_ok=True)
+    student.save('student_no_prune.h5')
 
     logging.info('Done!\n')
 
     if save_weights:
         logging.info('Saving the student into ' + save_weights_path + ' \n')
-        student.save_weights(save_weights_path)
+        
         logging.info('Done!\n')
 
     if args.momentum is not None:
@@ -645,17 +647,17 @@ def distillation(
     student.save(f"out/models/{config['experiment_name']}_nonPruned.h5")
 
     # Prune model
-    print("\n\n------ Student weights before pruning ------")
-    utils.print_sparsity(student)
-    config['epochs'] = 80
-    student = prune_model(student, train_set, test_set, config)
+    #print("\n\n------ Student weights before pruning ------")
+    #utils.print_sparsity(student)
+    #config['epochs'] = 80
+    #student = prune_model(student, train_set, test_set, config)
 
-    print("\n\n------ Student weights after pruning ------")
-    utils.print_sparsity(student)
+    #print("\n\n------ Student weights after pruning ------")
+    #utils.print_sparsity(student)
 
     # Save model
-    os.makedirs("out/models", exist_ok=True)
-    student.save(f"out/models/{config['experiment_name']}_pruned.h5")
+    #os.makedirs("out/models", exist_ok=True)
+    #student.save(f"out/models/{config['experiment_name']}_pruned.h5")
 
     # Evaluate the student
     # ROC, AUC, Confusion Matrix, Activation Maps...
