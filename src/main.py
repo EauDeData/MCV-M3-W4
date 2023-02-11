@@ -62,6 +62,9 @@ def __parse_args() -> argparse.Namespace:
     # Optuna args
     parser.add_argument('--n_trials', type=int, default=4,
                         help='Number of trials for the optuna search.')
+    # Pruning args
+    parser.add_argument('--prune_final_sparsity', type=float, default=0.8,
+                        help='Final sparsity for the pruning.')
 
     args = parser.parse_args()
 

@@ -380,12 +380,12 @@ def build_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     fit_model(model, train_set, val_set, config, log2wandb=True, save_weights=True)
 
 
-def prune_model(model, train_set, val_set, config, log2wandb=True):
+def prune_model(model, train_set, val_set, config, final_sparsity=0.80, log2wandb=True):
     # Define pruning schedule
     end_step = np.ceil(400/config["batch_size"]).astype(np.int32) * config["epochs"]
     pruning_params = {
         'pruning_schedule': tfmot.sparsity.keras.PolynomialDecay(initial_sparsity=0.0,
-                                                                final_sparsity=0.80,
+                                                                final_sparsity=final_sparsity,
                                                                 begin_step=0,
                                                                 end_step=end_step)
     }
@@ -394,7 +394,7 @@ def prune_model(model, train_set, val_set, config, log2wandb=True):
     # Convolutional layers train with pruning.
     # Don't prune the first 4 blocks of the model
     def apply_pruning_to_dense(layer):
-        if ("conv" in layer.name or "fire" in layer.name) and ("block" not in layer.name or int(layer.name.split('_')[0][-1]) > 1):
+        if ("conv" in layer.name or "fire" in layer.name): #and ("block" not in layer.name or int(layer.name.split('_')[0][-1]) > 1):
             return tfmot.sparsity.keras.prune_low_magnitude(layer, **pruning_params)
         return layer
 
@@ -500,12 +500,13 @@ def prune_and_train_any_model(args, dataset_dir):
     # Load model
     model = tf.keras.models.load_model(args.model_weights_file)
 
-    experiment_name = f'xception_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}'
+    # Save name with sparsity up to 2 decimals
+    experiment_name = f'student_sparsity_{args.prune_final_sparsity * 100:.2f}_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}'
 
     config: Dict[str, Any] = {
         "experiment_name": experiment_name,
         "model": {
-            "name": "Xception",
+            "name": "student",
         },
         "optimizer": {
             'type': args.optimizer,
@@ -523,7 +524,7 @@ def prune_and_train_any_model(args, dataset_dir):
     utils.print_sparsity(model)
 
     # Prune model
-    model = prune_model(model, train_datagen, validation_datagen, config)
+    model = prune_model(model, train_datagen, validation_datagen, config, args.prune_final_sparsity)
 
     print("\n\n------ Model weights after pruning ------")
     utils.print_sparsity(model)
