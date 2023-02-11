@@ -100,7 +100,7 @@ def train_student(
     optimizer,
     train_set,
     test_set,
-    metrics = [keras.metrics.SparseCategoricalAccuracy()],
+    metrics = [keras.metrics.SparseCategoricalAccuracy(), 'accuracy'],
     student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=False),
     distill_loss = keras.losses.KLDivergence(),
     alpha = 0.1

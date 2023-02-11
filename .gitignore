@@ -52,3 +52,5 @@ model_weights/
 model_plots/
 optuna-vis/
 virtualenv/
+*/big_daddy.h5
+*.zip

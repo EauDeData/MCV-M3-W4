@@ -586,18 +586,21 @@ def distillation(
         activation=activation,
         initialization=initialization,
         dropout=dropout,
-        batch_norm=batch_norm,
-    )
+        batch_norm=batch_norm,)
+
+    #student_knows = tf.keras.models.load_model('model_files/studentFinal.h5')
+    #student = utils.re_init(student_knows)
     print(student.summary())
 
     temperature = 10
-    alpha = .1  # 1, 0.1
+    alpha = 1  # 1, 0.1
 
     studentName = 'student_base_Distill_fire4block_HeNormal_lrelu_batchnorm_residualComplex_fullData'  ########
     save_weights_path = 'model_files/' + studentName + '.h5'
 
-    teacher_weights_file = './model_files/xception_best_model_smallData.h5'
-    trained_teacher = build_xception_model(teacher_weights_file)
+    teacher_weights_file = './model_files/xception_pruned/big_daddy.h5'
+    trained_teacher = tf.keras.models.load_model(teacher_weights_file) #build_xception_model(teacher_weights_file)
+    print('Big daddy in the house')
  
     config: Dict[str, Any] = {
         "experiment_name": studentName + f'_{datetime.datetime.now().strftime("%Y%m%d-%H%M%S")}',
@@ -617,7 +620,7 @@ def distillation(
         optimizer,
         train_set, test_set,
         metrics = [keras.metrics.SparseCategoricalAccuracy()],
-        student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        student_loss = keras.losses.SparseCategoricalCrossentropy(from_logits=False),
         distill_loss = keras.losses.KLDivergence(),
         alpha = alpha,
     )
@@ -634,6 +637,8 @@ def distillation(
 
     if args.momentum is not None:
         config['optimizer']['momentum'] = args.momentum
+    
+    print('Student trained!!!')
 
     # Save model
     os.makedirs("out/models", exist_ok=True)

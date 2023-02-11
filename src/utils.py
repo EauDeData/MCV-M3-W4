@@ -1,6 +1,7 @@
 import json
 import numpy as np
 from typing import Optional
+from keras import backend as K
 from keras.optimizers import SGD, Adam, RMSprop, Adagrad, Adadelta, Adamax, Nadam
 
 
@@ -31,6 +32,18 @@ def load_config(config_path: str):
 
     return config
 
+
+def re_init(model):
+    session = K.get_session()
+    for layer in model.layers: 
+        for v in layer.__dict__:
+            v_arg = getattr(layer,v)
+            if hasattr(v_arg,'initializer'):
+                initializer_method = getattr(v_arg, 'initializer')
+                initializer_method.run(session=session)
+                print('reinitializing layer {}.{}'.format(layer.name, v))
+
+    return model
 
 def print_sparsity(model):
     total_w = 0
