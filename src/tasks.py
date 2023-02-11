@@ -461,7 +461,7 @@ def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     utils.print_sparsity(model)
 
     # Prune model
-    model = prune_model(model, train_set, val_set, config)
+    model = prune_model(model, train_set, val_set, config, final_sparsity=0.80)
 
     print("\n\n------ Model weights after pruning ------")
     utils.print_sparsity(model)
