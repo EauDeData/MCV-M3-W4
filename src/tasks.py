@@ -446,9 +446,9 @@ def prune_model(model, train_set, val_set, config, final_sparsity=0.80, log2wand
         optimizer=optimizer,
         metrics=['accuracy']
     )
-    eval_model(model_for_export, val_set)
+    metric = eval_model(model_for_export, val_set)
 
-    return model_for_export
+    return model_for_export, metric
 
 
 def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt"):
@@ -461,10 +461,13 @@ def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     utils.print_sparsity(model)
 
     # Prune model
-    model = prune_model(model, train_set, val_set, config, final_sparsity=args.prune_final_sparsity)
+    model, metric = prune_model(model, train_set, val_set, config, final_sparsity=args.prune_final_sparsity)
 
     print("\n\n------ Model weights after pruning ------")
     utils.print_sparsity(model)
+
+    print("\n\n------ Model metrics ------")
+    print(metric)
 
     # Save model
     os.makedirs("out/models", exist_ok=True)
@@ -524,10 +527,13 @@ def prune_and_train_any_model(args, dataset_dir):
     utils.print_sparsity(model)
 
     # Prune model
-    model = prune_model(model, train_datagen, validation_datagen, config, args.prune_final_sparsity)
+    model, metric = prune_model(model, train_datagen, validation_datagen, config, args.prune_final_sparsity)
 
     print("\n\n------ Model weights after pruning ------")
     utils.print_sparsity(model)
+
+    print("\n\n------ Model metrics ------")
+    print(metric)
 
     # Save model
     os.makedirs("out/models", exist_ok=True)
