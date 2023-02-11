@@ -431,7 +431,7 @@ def prune_model(model, train_set, val_set, config, final_sparsity=0.80, log2wand
             tfmot.sparsity.keras.UpdatePruningStep(),
             tfmot.sparsity.keras.PruningSummaries(log_dir=config['experiment_name'])
         ] + callbacks,
-        validation_freq=50,
+        # validation_freq=50,
     )
 
     if log2wandb:
@@ -467,7 +467,8 @@ def prune_and_train_optuna_model(args, report_file: str = "report_best_model.txt
     utils.print_sparsity(model)
 
     print("\n\n------ Model metrics ------")
-    print(metric)
+    print(f"Loss: {metric[0]}")
+    print(f"Accuracy: {metric[1]}")
 
     # Save model
     os.makedirs("out/models", exist_ok=True)
@@ -533,7 +534,8 @@ def prune_and_train_any_model(args, dataset_dir):
     utils.print_sparsity(model)
 
     print("\n\n------ Model metrics ------")
-    print(metric)
+    print(f"Loss: {metric[0]}")
+    print(f"Accuracy: {metric[1]}")
 
     # Save model
     os.makedirs("out/models", exist_ok=True)
